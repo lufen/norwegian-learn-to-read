@@ -44,7 +44,7 @@ const AlphabetPage = (() => {
   }
 
   function selectLetter(entry, tile, container) {
-    const spokenLetter = entry.letter.toLowerCase();
+    const spokenLetter = entry.spokenSound || entry.letter.toLowerCase();
     window.NorwegianAudio.speak(spokenLetter);
 
     const detail = container.querySelector("#letter-detail");

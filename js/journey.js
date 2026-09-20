@@ -115,7 +115,7 @@ const JourneyPage = (() => {
     container.appendChild(resetWrap);
 
     card.querySelector("#journey-replay").addEventListener("click", () => {
-      if (currentLetter) window.NorwegianAudio.speak(currentLetter.toLowerCase());
+      if (currentLetter) speakLetter(currentLetter);
     });
     card.querySelector("#journey-next").addEventListener("click", () => startRound(container));
     resetWrap.querySelector("#journey-reset").addEventListener("click", () => {
@@ -155,7 +155,12 @@ const JourneyPage = (() => {
     feedback.innerHTML = "";
 
     updateStatus(container);
-    window.NorwegianAudio.speak(currentLetter.toLowerCase());
+    speakLetter(currentLetter);
+  }
+
+  function speakLetter(letter) {
+    const entry = entryFor(letter);
+    window.NorwegianAudio.speak((entry && entry.spokenSound) || letter.toLowerCase());
   }
 
   /** Prefer new letters, but keep mastered letters in rotation for recall. */

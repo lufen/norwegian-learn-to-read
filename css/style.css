@@ -270,21 +270,6 @@ a {
   color: #2e8b46;
 }
 
-/* Listen & Click game */
-.listen-game-card {
-  text-align: center;
-}
-
-.listen-game-score {
-  font-weight: 700;
-  color: var(--no-blue);
-  margin-bottom: 0.75rem;
-}
-
-.listen-game-options {
-  margin-top: 1.5rem;
-}
-
 .letter-tile.correct {
   background: #d3f3d8;
   border-color: #2e8b46;
@@ -525,8 +510,6 @@ a {
   margin: 1rem auto;
   border: 3px solid var(--no-blue);
   border-radius: var(--radius);
-  touch-action: none;
-  cursor: crosshair;
 }
 
 /* Dictation */

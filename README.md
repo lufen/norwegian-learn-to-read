@@ -10,7 +10,7 @@ A frontend-only, static web app that helps beginners learn to read and write Nor
 - **Spell Words** — words are broken into phonemes/syllables that can be played individually and then blended into the full word.
 - **Write Words** — dictation exercise: listen to a word and type it; the app checks your spelling and highlights matches/mismatches.
 - **Little Books** — a gradual path from first-word matching to tiny sentences and short decodable stories, with randomized comprehension questions that can be practised repeatedly.
-- **Write Letters** — touch and mouse tracing practice for letter formation.
+- **Write Letters** — animated stroke-order demo for each letter; the child writes on real paper while watching how to form it.
 - **My Progress** — tracks mastered letters and words locally (no login required).
 
 ## Running locally
@@ -39,7 +39,8 @@ js/progress.js         Mastered letters/words tracking (localStorage)
 js/alphabet.js         Letters & Sounds module
 js/journey.js          Letter Journey progression game
 js/reading.js          Decodable mini-books and comprehension
-js/handwriting.js      Letter tracing with touch/mouse input
+js/handwriting.js      Animated stroke-order demo (letter formation guide)
+js/letter-strokes.js   Stroke path data used to animate each letter
 js/spelling.js         Spell Words module
 js/writing.js          Write Words (dictation) module
 js/progress-page.js    My Progress summary page
