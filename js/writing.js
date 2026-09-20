@@ -104,6 +104,12 @@ const WritingPage = (() => {
     const correct = correctText.trim().toLowerCase();
     const attempt = (userText || "").trim().toLowerCase();
 
+    if (window.NorwegianContentFilter && window.NorwegianContentFilter.containsBlockedWord(attempt)) {
+      feedbackEl.className = "feedback feedback-incorrect";
+      feedbackEl.innerHTML = `Let's try that word again — type only the word you heard.`;
+      return;
+    }
+
     if (attempt === correct) {
       feedbackEl.className = "feedback feedback-correct";
       feedbackEl.innerHTML = `🎉 Riktig! That's correct — great job!`;
