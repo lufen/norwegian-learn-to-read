@@ -3,7 +3,7 @@
  */
 
 const App = (() => {
-  const VALID_PAGES = ["home", "alphabet", "listen-game", "spelling", "writing", "progress"];
+  const VALID_PAGES = ["home", "alphabet", "listen-game", "journey", "spelling", "writing", "progress"];
 
   function getRenderer(pageName) {
     switch (pageName) {
@@ -11,6 +11,8 @@ const App = (() => {
         return (container) => window.AlphabetPage.render(container);
       case "listen-game":
         return (container) => window.ListenGamePage.render(container);
+      case "journey":
+        return (container) => window.JourneyPage.render(container);
       case "spelling":
         return (container) => window.SpellingPage.render(container);
       case "writing":
@@ -43,6 +45,10 @@ const App = (() => {
       <button type="button" class="home-tile" data-page="listen-game">
         <span class="home-tile-icon">👂</span>
         <span>Listen &amp; Click</span>
+      </button>
+      <button type="button" class="home-tile" data-page="journey">
+        <span class="home-tile-icon">🚀</span>
+        <span>Letter Journey</span>
       </button>
       <button type="button" class="home-tile" data-page="spelling">
         <span class="home-tile-icon">🧩</span>
