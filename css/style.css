@@ -446,6 +446,29 @@ a {
   font-size: 1.4rem;
 }
 
+.btn-level.locked {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.reading-hint {
+  color: #777;
+  font-size: 0.95rem;
+  margin: 0.25rem 0 0.5rem;
+}
+
+.reading-summary-list {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 1rem;
+  font-size: 1.1rem;
+  line-height: 1.8;
+  text-align: left;
+  max-width: 320px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
 .reading-prompt {
   display: flex;
   align-items: center;

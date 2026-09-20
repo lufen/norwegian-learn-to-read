@@ -107,6 +107,12 @@ const DECODABLE_BOOKS = [
     icon: "🐭",
     level: "Story practice",
     wordBank: { mus: "🐭", sol: "☀️", løper: "💨", liten: "🤏" },
+    // A brand-new word never shown as text or as a choice anywhere else in
+    // the app, but fully spellable from letters/sounds the child has
+    // already met across earlier books (m, i, l). Used once, on the final
+    // page, to check real decoding of an unseen word rather than
+    // recognition of a memorized picture/word shape.
+    transferWord: { word: "mil", emoji: "🛣️" },
     pages: [
       { text: "Mus.", keyword: "mus", picture: "🐭" },
       { text: "Mus ser sol.", keyword: "sol", picture: "🐭👀☀️" },
