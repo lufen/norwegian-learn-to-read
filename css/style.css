@@ -574,6 +574,13 @@ a {
   font-size: 0.85rem;
   font-weight: 600;
   margin-bottom: 0.5rem;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.new-letter-badge:hover,
+.new-letter-badge:focus-visible {
+  background: #ffe9b3;
 }
 
 .profile-switch-card {

@@ -14,7 +14,7 @@ const SpellingPage = (() => {
     currentWordIndex = Number.isInteger(saved.wordIndex) ? saved.wordIndex : currentWordIndex;
     const level = window.WORD_LEVELS[currentLevelIndex] || window.WORD_LEVELS[1];
     currentLevelIndex = window.WORD_LEVELS.indexOf(level);
-    currentWordIndex = Math.min(currentWordIndex, level.words.length - 1);
+    currentWordIndex = Math.max(0, Math.min(currentWordIndex, level.words.length - 1));
     savePosition();
     container.innerHTML = "";
 
@@ -68,6 +68,7 @@ const SpellingPage = (() => {
       </div>
     `;
     container.appendChild(card);
+    if (window.Curriculum) window.Curriculum.bindBadgeAudio(card);
 
     const syllablesContainer = card.querySelector("#word-syllables");
     const displayParts = word.text.includes(" ")

@@ -55,7 +55,7 @@ const ProgressPage = (() => {
     resetWrap.querySelector("#reset-progress").addEventListener("click", () => {
       window.ChildConfirm.show({
         message: "Reset everything? All your stars will disappear.",
-        spokenMessage: "Are you sure you want to reset everything? All your stars will disappear.",
+        spokenMessage: "Er du sikker på at du vil slette alt? Da forsvinner alle stjernene dine.",
         confirmLabel: "🗑️ Yes, reset everything",
         cancelLabel: "↩️ No, keep my progress",
         onConfirm: () => {

@@ -218,3 +218,155 @@ fixes and deferred items are now implemented (see §8-9). Re-review
 recommended once real usage data exists, particularly on whether Letter
 Journey's revised mastery/retry logic and the new phrase level actually
 land well with a 5-year-old in practice.
+
+## 11. IA/design review round 3 — teacher + student + adversarial (not yet fixed)
+Ran three independent rubber-duck passes against the app's *current* state
+(post §8-9 fixes): a **teacher** persona (curriculum/IA/assessment rigor),
+a **student** persona (literal 5-year-old operating it alone), and an
+**adversarial** persona (actively trying to break it via misuse, timing,
+multi-profile, and IA contradictions). Nothing below has been implemented
+yet — this is findings only, pending a decision to build them.
+
+### Blocking (undermines a core claim of the app)
+1. **Cross-profile data bleed.** `js/reading.js`'s post-correct-answer
+   `setTimeout` (~1.1s) is not cancelled on navigation. If a profile is
+   switched or progress reset while it's pending, it fires afterward and
+   writes the old profile's reading state into the new/reset profile's
+   storage, then force-navigates there. Breaks profile isolation.
+2. **"Independent reading" isn't measurable.** `js/reading.js` auto-speaks
+   `spokenPrompt`, which itself often contains or implies the answer
+   (e.g. "Find the word X" / "Point to the picture of X"), yet a correct
+   tap with no help button pressed is still logged as independent/unaided
+   reading. A child can succeed by listening alone, never decoding print.
+3. **Letter unlock order is effectively random.** `js/journey.js` defines
+   `LETTER_ORDER` but never uses it — `loadJourney()`/`unlockIfReady()`
+   both draw from the full locked pool at random. Breaks the assumption
+   (baked into books/word levels) that letters are introduced in a
+   defined sequence.
+4. **Little Books word banks aren't actually closed/cumulative.** Several
+   books' declared `wordBank` in `js/data.js` omits words their own pages
+   use (e.g. `Se`, `er`, `ser` appear in pages but not in the bank for
+   `tiny-sentences`, `sol`, `katt`, `bil`). The "known word" premise the
+   activity is built on doesn't hold for the shipped content.
+5. **Book unlocking has no real decoding checkpoint.** Only one book
+   (`mus`) defines a `transferWord`, it's shown only 50% of the time via
+   `createQuestion()`, and `summary-continue` unlocks the next book
+   unconditionally — with no record that any transfer word was even
+   attempted. Progression measures button-pressing, not decoding.
+6. **Profile creation is impossible for the target user.**
+   `js/profiles.js`'s `create()` is triggered via a plain `window.prompt()`
+   — an English, keyboard-required native dialog a non-reading 5-year-old
+   cannot use alone.
+7. **Little Books has two functional bugs**: `.reading-choice` buttons
+   aren't disabled immediately on a correct tap (only after a ~1100ms
+   delay), so rapid tapping can skip a page; and the `#summary-home`
+   "take a break" button sets `location.hash = ""` with no
+   `hashchange` listener anywhere, making it a dead no-op control.
+8. **Destructive-action dialogs speak English.** `ChildConfirm.show()`
+   calls in `js/journey.js`/`js/progress-page.js` (reset confirmations)
+   pass English `spokenMessage` text, unlike the rest of the app's
+   Norwegian-first spoken instructions.
+
+### Non-blocking (design debt, worth fixing but not urgent)
+- Home tile order, top-nav order, and the spec's own recommended learning
+  order (§3) all disagree with each other; Little Books is the most
+  visually "primary" route on Home despite having zero letter-readiness
+  gating (no `Curriculum` check at all in `js/reading.js`).
+- The "Journey-mastered" vs "self-reported" letter stats on the Progress
+  page read from the same underlying `state.letters` field
+  (`js/progress.js`), so they can show contradictory numbers (e.g. more
+  self-reported than journey-mastered when demotion has occurred) instead
+  of being two genuinely separate measures.
+- `js/curriculum.js`'s "🆕 new letter" badge only diffs distinct capital
+  letters — no concept of digraphs (`kj`, `sk`) or word difficulty — and
+  has no audio, only an English `title` tooltip, so it's meaningless to a
+  non-reader anyway.
+- Session-pacing timer/`breakReminderShown` in `js/app.js` isn't reset on
+  `NorwegianProfiles.switchTo()`, so a sibling can inherit a stale
+  break-reminder countdown.
+- Persisted activity indices (`pageIndex`, `wordIndex`, etc.) are only
+  clamped upward (`Math.min`); a stray negative/stale value blanks the
+  activity instead of resetting to a safe default.
+- A malformed active profile ID (`activeId` not present in `profiles`)
+  silently displays a fallback profile in the UI while still reading and
+  writing to the invalid profile's storage key.
+- Minor UX polish: nav speaks the destination only after tap, not before;
+  Write Letters/Write Words share an ambiguous ✍️ icon; level pickers and
+  the curriculum badge have no spoken labels; `ChildConfirm`'s backdrop
+  tap silently dismisses without recording either choice.
+
+**Convergent findings** (flagged independently by 2+ of the 3 reviews, a
+strong signal for priority): #2 (independent-reading validity), #4/#5
+(book bank/unlock rigor), the Journey/self-report stat entanglement, and
+the curriculum badge's shallowness/inaudibility.
+
+### Response — built in this pass
+All 8 blocking issues and most non-blocking issues above are now fixed:
+- **Cross-profile bleed**: `NorwegianProgress` now exposes an `epoch`,
+  bumped on `reloadState()`/`reset()`. `js/reading.js`'s deferred
+  `setTimeout` callbacks capture the epoch when scheduled and abort (no
+  save, no navigate) if it's changed by the time they fire.
+- **Independent-reading validity**: questions are now tagged
+  `type: "word" | "picture"`; only `"word"` matches (which require reading
+  print, not just recognizing a picture from a spoken word) count toward
+  "read without help" — picture-matches are tracked separately and shown
+  as "recognized the picture" in the book summary, not conflated with
+  reading.
+- **Letter unlock order**: left intentionally random, per an explicit
+  earlier product decision in this session ("start with two random
+  letters, unlock more at random") — this was *not* reverted. `LETTER_ORDER`
+  remains only as a display-order/fallback hint; the curriculum badge
+  already handles alignment generically regardless of unlock order.
+- **Little Books word banks**: fixed to be genuinely closed — every word
+  actually used in each book's pages (including small function words like
+  "se"/"er") is now in that book's `wordBank`.
+- **Book unlock checkpoint**: every book with a `transferWord` now always
+  tests it on the last page (was 50%), and the existing wrong-answer
+  retry/re-teach loop means a book can't be finished without eventually
+  answering it correctly. Added `transferWord`s to the "sol", "katt", and
+  "bil" books (previously only "mus" had one), each spellable purely from
+  letters already met in that book.
+- **Profile creation**: `window.prompt()` replaced with a tap-only avatar
+  picker (no typing/reading required at all) in `js/app.js`;
+  `js/profiles.js`'s `create()` now accepts an avatar directly.
+- **Little Books bugs**: choice buttons are now disabled the instant a tap
+  lands (not after the ~1.1s pause), preventing rapid-tap page skips; the
+  "🏠 Take a break" button now actually navigates home via `window.App`.
+- **Norwegian-first dialogs**: `ChildConfirm` reset confirmations in
+  `js/journey.js`/`js/progress-page.js` now speak Norwegian.
+- **Journey/self-report entanglement**: `js/journey.js` no longer calls
+  `markLetterMastered()` on tested mastery — that would double-write into
+  the same `state.letters` bucket used by the self-report "I know this
+  letter" button in `js/alphabet.js`. The two stats are now genuinely
+  independent.
+- **Curriculum badge**: now also flags common Norwegian sound patterns
+  (`kj`, `sk`, `skj`, `sj`, `gj`, `ng`), not just distinct letters, and is
+  a tappable button that speaks its explanation in Norwegian
+  (`Curriculum.bindBadgeAudio()`), wired into Spell Words, Write Words,
+  and (newly) Little Books.
+- **Session pacing on profile switch**: `resetSessionPacing()` now runs
+  whenever the active profile changes, so a sibling starts a fresh
+  15-minute clock instead of inheriting one.
+- **Malformed profile ID**: `js/profiles.js`'s `load()` now falls back to
+  the first profile if a stored `activeId` doesn't match any profile.
+- **Persisted index lower-bound**: `spelling.js`/`writing.js`/`reading.js`
+  now clamp indices with `Math.max(0, ...)`, not just `Math.min`.
+- **IA alignment**: Home tile order, top-nav order, and §3's recommended
+  order now all agree (Alphabet → Journey → Write Letters → Little Books →
+  Spell Words → Write Words → Progress); Write Words' icon changed from
+  ✍️ to 📝 to disambiguate from Write Letters.
+- **Dead-control class fix**: added a `hashchange` listener in `js/app.js`
+  so any control that sets `location.hash` directly (not just explicit nav
+  clicks) actually navigates — this was the root cause of the dead
+  "take a break" button and could have affected browser back/forward too.
+
+Not yet actioned (left as-is, lower priority): nav speaking the
+destination only after tap rather than before; level pickers not having
+individual spoken labels; `ChildConfirm`'s backdrop-tap still silently
+dismissing without recording a choice.
+
+Verified via `node --check` on all changed files, targeted Playwright
+scripts covering the profile-switch race condition, the transfer-word
+checkpoint, the immediate-disable fix, and the avatar-only profile
+creation flow, plus a re-run of the existing regression smoke test — all
+passed with zero console/page errors.

@@ -15,6 +15,12 @@ const NorwegianProfiles = (() => {
       const raw = localStorage.getItem(STORAGE_KEY);
       const parsed = raw ? JSON.parse(raw) : null;
       if (parsed && Array.isArray(parsed.profiles) && parsed.profiles.length > 0) {
+        // Guard against a corrupted/orphaned activeId (e.g. from manual
+        // storage edits or a partial migration) silently reading/writing a
+        // profile that isn't actually in the list.
+        if (!parsed.profiles.some((p) => p.id === parsed.activeId)) {
+          parsed.activeId = parsed.profiles[0].id;
+        }
         return parsed;
       }
     } catch (e) {
@@ -51,10 +57,14 @@ const NorwegianProfiles = (() => {
     save(data);
   }
 
-  function create(name) {
+  function create(name, avatar) {
     const id = `child-${Date.now().toString(36)}`;
-    const avatar = AVATARS[data.profiles.length % AVATARS.length];
-    data.profiles.push({ id, name: (name || "").trim() || `Player ${data.profiles.length + 1}`, avatar });
+    const resolvedAvatar = avatar || AVATARS[data.profiles.length % AVATARS.length];
+    data.profiles.push({
+      id,
+      name: (name || "").trim() || `Player ${data.profiles.length + 1}`,
+      avatar: resolvedAvatar
+    });
     data.activeId = id;
     save(data);
     return id;

@@ -54,6 +54,16 @@ const NorwegianProgress = (() => {
 
   let state = load();
 
+  // Bumped whenever the active profile changes or progress is reset, so
+  // in-flight async callbacks (e.g. a setTimeout scheduled just before a
+  // profile switch) can detect they're stale and avoid writing the wrong
+  // profile's data or bouncing the child to the wrong screen.
+  let epoch = 0;
+
+  function getEpoch() {
+    return epoch;
+  }
+
   function markLetterMastered(letter) {
     state.letters[letter] = true;
     save(state);
@@ -119,12 +129,14 @@ const NorwegianProgress = (() => {
 
   function reset() {
     state = emptyState();
+    epoch += 1;
     save(state);
   }
 
   /** Re-reads state from storage — call after switching the active profile. */
   function reloadState() {
     state = load();
+    epoch += 1;
   }
 
   return {
@@ -140,7 +152,8 @@ const NorwegianProgress = (() => {
     getActivityState,
     saveActivityState,
     reset,
-    reloadState
+    reloadState,
+    getEpoch
   };
 })();
 

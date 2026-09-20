@@ -37,18 +37,23 @@ const ReadingPage = (() => {
     wordStats = saved.wordStats && typeof saved.wordStats === "object" ? saved.wordStats : {};
     unlockedCount = Math.max(1, Math.min(unlockedCount, window.DECODABLE_BOOKS.length));
     bookIndex = Math.max(0, Math.min(bookIndex, unlockedCount - 1));
-    pageIndex = Math.min(pageIndex, window.DECODABLE_BOOKS[bookIndex].pages.length - 1);
+    pageIndex = Math.max(0, Math.min(pageIndex, window.DECODABLE_BOOKS[bookIndex].pages.length - 1));
   }
 
   function saveState() {
     window.NorwegianProgress.saveActivityState("reading", { bookIndex, pageIndex, unlockedCount, wordStats });
   }
 
-  function recordAttempt(word, correct, usedHelp) {
+  function recordAttempt(word, correct, usedHelp, countsAsReading) {
     if (!correct) return;
-    const entry = wordStats[word] || { independent: 0, withHelp: 0 };
-    if (usedHelp) entry.withHelp += 1;
-    else entry.independent += 1;
+    const entry = wordStats[word] || { independent: 0, withHelp: 0, recognizedOnly: 0 };
+    if (!countsAsReading) {
+      entry.recognizedOnly = (entry.recognizedOnly || 0) + 1;
+    } else if (usedHelp) {
+      entry.withHelp += 1;
+    } else {
+      entry.independent += 1;
+    }
     wordStats[word] = entry;
     saveState();
   }
@@ -68,9 +73,13 @@ const ReadingPage = (() => {
       question = createQuestion(book, page, isLastPage);
       questionNumber += 1;
       helpUsedThisAttempt = false;
+      const scheduledEpoch = window.NorwegianProgress.getEpoch();
       // Speak the task itself (not the story sentence) so a non-reader
       // knows what to do without needing the "🔊" replay button first.
-      window.setTimeout(() => window.NorwegianAudio.speak(question.spokenPrompt), 400);
+      window.setTimeout(() => {
+        if (window.NorwegianProgress.getEpoch() !== scheduledEpoch) return;
+        window.NorwegianAudio.speak(question.spokenPrompt);
+      }, 400);
     }
 
     container.innerHTML = `
@@ -94,6 +103,7 @@ const ReadingPage = (() => {
         <div class="reading-page" aria-live="polite">
           <div class="reading-picture" aria-hidden="true">${page.picture}</div>
           <p class="reading-sentence" id="reading-sentence">${page.text}</p>
+          ${window.Curriculum ? window.Curriculum.newLetterBadge(page.text) : ""}
           <p class="reading-hint">Try reading it yourself first! 🤗</p>
           <div class="detail-actions">
             <button type="button" class="btn" id="read-sentence">🔊 Hear it</button>
@@ -121,6 +131,8 @@ const ReadingPage = (() => {
       </div>
     `;
 
+    if (window.Curriculum) window.Curriculum.bindBadgeAudio(container);
+
     container.querySelectorAll("[data-book]").forEach((button) => {
       if (button.disabled) return;
       button.addEventListener("click", () => {
@@ -147,13 +159,26 @@ const ReadingPage = (() => {
     container.querySelector(".reading-questions").addEventListener("click", (event) => {
       const button = event.target.closest(".reading-choice");
       if (!button) return;
+      // Disable all choices the instant a tap lands, before the ~1.1s
+      // "correct" pause — otherwise excited/rapid tapping during that
+      // window can register as answers to the next rendered question and
+      // skip a page.
+      container.querySelectorAll(".reading-choice").forEach((btn) => { btn.disabled = true; });
       const feedback = button.closest(".reading-question").querySelector(".reading-feedback");
       const correct = button.dataset.choice === question.answer;
+      const scheduledEpoch = window.NorwegianProgress.getEpoch();
       if (correct) {
         feedback.className = "feedback reading-feedback feedback-correct";
         feedback.textContent = "🎉 Riktig! Du leste det!";
-        recordAttempt(question.answerWord, true, helpUsedThisAttempt);
+        // Picture-matching only checks that a spoken word was understood,
+        // not that the child decoded any print — don't count it toward
+        // "read without help".
+        recordAttempt(question.answerWord, true, helpUsedThisAttempt, question.type !== "picture");
         window.setTimeout(() => {
+          // Abort if the active profile changed (or progress was reset)
+          // while this was pending, so we never write one child's session
+          // into another's storage or force-navigate them away.
+          if (window.NorwegianProgress.getEpoch() !== scheduledEpoch) return;
           if (isLastPage) {
             showingSummary = true;
           } else {
@@ -168,6 +193,12 @@ const ReadingPage = (() => {
         feedback.textContent = "La oss lytte til lydene sammen — let's sound it out together.";
         helpUsedThisAttempt = true;
         soundOutWord(question.answerWord);
+        // Let them try again once they've heard it sounded out, instead of
+        // leaving every choice permanently disabled.
+        window.setTimeout(() => {
+          if (window.NorwegianProgress.getEpoch() !== scheduledEpoch) return;
+          container.querySelectorAll(".reading-choice").forEach((btn) => { btn.disabled = false; });
+        }, letterCountDelay(question.answerWord));
       }
     });
     container.querySelector("#previous-page").addEventListener("click", () => {
@@ -191,13 +222,16 @@ const ReadingPage = (() => {
     const words = Object.keys(book.wordBank || {});
     const lines = words.map((word) => {
       const stat = wordStats[word];
-      if (!stat || (stat.independent === 0 && stat.withHelp === 0)) {
+      if (!stat || (stat.independent === 0 && stat.withHelp === 0 && !stat.recognizedOnly)) {
         return `<li>${word} — practiced today</li>`;
       }
       if (stat.independent > 0) {
         return `<li>${word} — read without help ✅</li>`;
       }
-      return `<li>${word} — practiced with help 🧩</li>`;
+      if (stat.withHelp > 0) {
+        return `<li>${word} — practiced with help 🧩</li>`;
+      }
+      return `<li>${word} — recognized the picture 👀</li>`;
     });
     container.innerHTML = `
       <div class="page-header">
@@ -233,7 +267,11 @@ const ReadingPage = (() => {
     });
     container.querySelector("#summary-home").addEventListener("click", () => {
       showingSummary = false;
-      window.location.hash = "";
+      if (window.App && window.App.navigate) {
+        window.App.navigate("home");
+      } else {
+        window.location.hash = "";
+      }
     });
   }
 
@@ -248,16 +286,24 @@ const ReadingPage = (() => {
     window.setTimeout(() => window.NorwegianAudio.speak(word), letters.length * 500 + 300);
   }
 
+  /** How long soundOutWord(word) takes to finish, in ms. */
+  function letterCountDelay(word) {
+    return word.length * 500 + 800;
+  }
+
   /**
    * Build one of two decodable question types from the book's own word
    * bank: matching a spoken word to its printed form, or matching a spoken
    * word to its picture. Distractors always come from the same book's word
-   * bank, so nothing undecodable ever appears. On the final page of the
-   * final book, occasionally test the book's transfer word instead, to
-   * check real decoding of an unseen-but-decodable word.
+   * bank, so nothing undecodable ever appears. On the final page of a book
+   * that defines a transfer word, always test it instead of a normal
+   * question — this is the one required checkpoint that the child actually
+   * decoded something new, rather than just recognizing a memorized word/
+   * picture, so it must be attempted (and passed, via the existing retry
+   * loop) before the book can be finished.
    */
   function createQuestion(book, page, isLastPage) {
-    if (isLastPage && book.transferWord && Math.random() < 0.5) {
+    if (isLastPage && book.transferWord) {
       const bank = book.wordBank || {};
       const distractors = shuffle(Object.keys(bank)).slice(0, 2);
       const choices = shuffle([book.transferWord.word, ...distractors]);
@@ -266,6 +312,7 @@ const ReadingPage = (() => {
         spokenPrompt: `Kan du lese dette nye ordet? Finn ordet ${book.transferWord.word}.`,
         answer: book.transferWord.word,
         answerWord: book.transferWord.word,
+        type: "word",
         choices
       };
     }
@@ -284,6 +331,7 @@ const ReadingPage = (() => {
         spokenPrompt: `Finn ordet ${keyword}.`,
         answer: keyword,
         answerWord: keyword,
+        type: "word",
         choices
       };
     }
@@ -296,6 +344,7 @@ const ReadingPage = (() => {
       spokenPrompt: `Pek på bildet av ${keyword}.`,
       answer: correctPicture,
       answerWord: keyword,
+      type: "picture",
       choices
     };
   }

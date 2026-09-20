@@ -12,6 +12,11 @@
  */
 
 const Curriculum = (() => {
+  // Common Norwegian multi-letter sound units — a badge based on distinct
+  // capital letters alone misses these, so a word with zero "new letters"
+  // can still contain a sound-pattern the child has never met.
+  const KNOWN_PATTERNS = ["skj", "kj", "gj", "sj", "sk", "ng"];
+
   function knownLetters() {
     const unlocked = (window.NorwegianProgress && window.NorwegianProgress.getJourney().unlocked) || [];
     return new Set(unlocked);
@@ -27,21 +32,37 @@ const Curriculum = (() => {
     return Array.from(letters).sort();
   }
 
+  /** Multi-letter sound patterns (kj, sk, skj, ...) present in `text`, lowercase. */
+  function patternsIn(text) {
+    const lower = String(text).toLowerCase();
+    return KNOWN_PATTERNS.filter((pattern) => lower.includes(pattern));
+  }
+
   /** Letters in `text` that haven't been unlocked yet in Letter Journey. */
   function unknownLettersIn(text) {
     const known = knownLetters();
     return requiredLettersFor(text).filter((letter) => !known.has(letter));
   }
 
-  /** Small HTML badge to show next to a word/page when it uses unmet letters. Empty string if none. */
+  /** Small HTML badge to show next to a word/page when it uses unmet letters or sound patterns. Empty string if none. */
   function newLetterBadge(text) {
     const unknown = unknownLettersIn(text);
-    if (unknown.length === 0) return "";
-    const label = unknown.length === 1 ? "new letter" : "new letters";
-    return `<span class="new-letter-badge" title="Uses ${label} not yet unlocked in Letter Journey: ${unknown.join(", ")}">🆕 ${unknown.join("")}</span>`;
+    const patterns = patternsIn(text);
+    if (unknown.length === 0 && patterns.length === 0) return "";
+    const parts = unknown.concat(patterns);
+    const spoken = `Dette ordet har lyder du ikke har møtt ennå i bokstavreisen: ${parts.join(", ")}.`;
+    return `<button type="button" class="new-letter-badge" data-spoken="${spoken.replace(/"/g, "&quot;")}" title="Uses sounds not yet unlocked in Letter Journey: ${parts.join(", ")}">🆕 ${parts.join("")}</button>`;
   }
 
-  return { knownLetters, requiredLettersFor, unknownLettersIn, newLetterBadge };
+  /** Wire up tap-to-hear on any newLetterBadge() buttons already inserted into `container`. */
+  function bindBadgeAudio(container) {
+    if (!container || !window.NorwegianAudio) return;
+    container.querySelectorAll(".new-letter-badge[data-spoken]").forEach((btn) => {
+      btn.addEventListener("click", () => window.NorwegianAudio.speak(btn.dataset.spoken));
+    });
+  }
+
+  return { knownLetters, requiredLettersFor, unknownLettersIn, patternsIn, newLetterBadge, bindBadgeAudio };
 })();
 
 if (typeof window !== "undefined") {

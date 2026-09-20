@@ -125,7 +125,7 @@ const JourneyPage = (() => {
     resetWrap.querySelector("#journey-reset").addEventListener("click", () => {
       window.ChildConfirm.show({
         message: "Start over? You'll lose your unlocked letters.",
-        spokenMessage: "Do you want to start the letter journey over? You will lose your unlocked letters.",
+        spokenMessage: "Vil du starte bokstavreisen på nytt? Da mister du bokstavene du har låst opp.",
         confirmLabel: "🔄 Yes, start over",
         cancelLabel: "↩️ No, keep going",
         onConfirm: () => {
@@ -238,9 +238,14 @@ const JourneyPage = (() => {
     }
 
     const nowMastered = isMastered(currentLetter);
-    if (nowMastered && !wasMastered) {
-      window.NorwegianProgress.markLetterMastered(currentLetter);
-    }
+    // Journey mastery is tracked entirely in journey.scores (persisted via
+    // persist() below) — it deliberately does NOT also write into
+    // NorwegianProgress's self-reported `state.letters`, which is a
+    // separate, honest measure of what the child says they know (set only
+    // from the "I know this letter" button in js/alphabet.js). Keeping
+    // these two data stores independent is what lets the Progress page
+    // show them as two genuinely different numbers instead of one
+    // conflated one.
     const unlockedLetter = unlockIfReady();
     persist();
 

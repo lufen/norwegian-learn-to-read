@@ -54,7 +54,11 @@ const DECODABLE_BOOKS = [
     title: "Tiny sentences",
     icon: "📝",
     level: "Next step",
-    wordBank: { sol: "☀️", katt: "🐱", bil: "🚗", gul: "🟡" },
+    // Every word that actually appears in this book's pages must be in its
+    // bank — including small function words like "se"/"er" — otherwise a
+    // "closed word bank" claim isn't true and the child can hit unbanked
+    // print with no distractor/picture support.
+    wordBank: { sol: "☀️", katt: "🐱", bil: "🚗", gul: "🟡", se: "👀", er: "🟰" },
     pages: [
       { text: "Se sol.", keyword: "sol", picture: "👀☀️" },
       { text: "Se katt.", keyword: "katt", picture: "👀🐱" },
@@ -67,7 +71,10 @@ const DECODABLE_BOOKS = [
     title: "Sol",
     icon: "☀️",
     level: "Story practice",
-    wordBank: { sol: "☀️", gul: "🟡", lyser: "✨" },
+    wordBank: { sol: "☀️", gul: "🟡", lyser: "✨", er: "🟰", se: "👀" },
+    // Spellable purely from letters already in this book's own bank
+    // (s, u, r), never shown as print or a choice elsewhere.
+    transferWord: { word: "sur", emoji: "🍋" },
     pages: [
       { text: "Sol.", keyword: "sol", picture: "☀️" },
       { text: "Sol er gul.", keyword: "gul", picture: "🟡" },
@@ -80,7 +87,10 @@ const DECODABLE_BOOKS = [
     title: "Katt",
     icon: "🐱",
     level: "Story practice",
-    wordBank: { katt: "🐱", sover: "💤", sol: "☀️", løper: "💨" },
+    wordBank: { katt: "🐱", sover: "💤", sol: "☀️", løper: "💨", ser: "👀" },
+    // Spellable from letters already met (r, a) plus this book's own katt/
+    // sover/sol/løper letters.
+    transferWord: { word: "rar", emoji: "🤪" },
     pages: [
       { text: "Katt.", keyword: "katt", picture: "🐱" },
       { text: "Katt sover.", keyword: "sover", picture: "🐱💤" },
@@ -93,7 +103,10 @@ const DECODABLE_BOOKS = [
     title: "Bil",
     icon: "🚗",
     level: "Story practice",
-    wordBank: { bil: "🚗", blå: "🔵", kjører: "💨" },
+    wordBank: { bil: "🚗", blå: "🔵", kjører: "💨", er: "🟰", se: "👀" },
+    // Spellable from letters already met (l, å, s) — a lock, not shown
+    // anywhere else in the app.
+    transferWord: { word: "lås", emoji: "🔒" },
     pages: [
       { text: "Bil.", keyword: "bil", picture: "🚗" },
       { text: "Bil er blå.", keyword: "blå", picture: "🔵" },
@@ -106,7 +119,7 @@ const DECODABLE_BOOKS = [
     title: "Mus",
     icon: "🐭",
     level: "Story practice",
-    wordBank: { mus: "🐭", sol: "☀️", løper: "💨", liten: "🤏" },
+    wordBank: { mus: "🐭", sol: "☀️", løper: "💨", liten: "🤏", ser: "👀", er: "🟰" },
     // A brand-new word never shown as text or as a choice anywhere else in
     // the app, but fully spellable from letters/sounds the child has
     // already met across earlier books (m, i, l). Used once, on the final
