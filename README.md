@@ -6,6 +6,7 @@ Interactive web application for learning to read and write Norwegian with letter
 A frontend-only, static web app that helps beginners learn to read and write Norwegian:
 
 - **Letters & Sounds** — a grid of all 29 Norwegian letters (A–Å). Clicking a letter plays its sound (via the Web Speech API) and shows example words.
+- **Letter Journey** — a progression game: you start with just two letters, each letter must be answered correctly a few times to be mastered, and a new letter unlocks once every letter in play is mastered.
 - **Spell Words** — words are broken into phonemes/syllables that can be played individually and then blended into the full word.
 - **Write Words** — dictation exercise: listen to a word and type it; the app checks your spelling and highlights matches/mismatches.
 - **My Progress** — tracks mastered letters and words locally (no login required).
@@ -34,6 +35,7 @@ js/audio.js           Speech synthesis wrapper (letter/word pronunciation)
 js/settings.js        Text size, dyslexia-friendly font, audio speed (persisted)
 js/progress.js         Mastered letters/words tracking (localStorage)
 js/alphabet.js         Letters & Sounds module
+js/journey.js          Letter Journey progression game
 js/spelling.js         Spell Words module
 js/writing.js          Write Words (dictation) module
 js/progress-page.js    My Progress summary page

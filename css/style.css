@@ -301,6 +301,67 @@ a {
   opacity: 0.85;
 }
 
+/* Letter Journey */
+.journey-card {
+  text-align: center;
+}
+
+.journey-counts {
+  font-weight: 700;
+  color: var(--no-blue);
+}
+
+.journey-status .progress-bar {
+  max-width: 420px;
+  margin: 0.75rem auto 0;
+}
+
+.journey-unlock {
+  margin-top: 0.5rem;
+  font-weight: 700;
+}
+
+.journey-pool {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.5rem;
+  margin: 1.25rem 0;
+}
+
+.journey-chip {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 56px;
+  padding: 0.4rem 0.6rem;
+  border: 2px solid var(--no-blue);
+  border-radius: var(--radius);
+  background: var(--no-white);
+  color: var(--no-blue);
+}
+
+.journey-chip.mastered {
+  background: #d3f3d8;
+  border-color: #2e8b46;
+  color: #2e8b46;
+}
+
+.journey-chip.locked {
+  border-style: dashed;
+  border-color: #b9bfd6;
+  color: #777;
+}
+
+.journey-chip-letter {
+  font-size: 1.3rem;
+  font-weight: 700;
+}
+
+.journey-chip-score {
+  font-size: 0.75rem;
+}
+
 .letter-detail {
   background: var(--no-white);
   border-radius: var(--radius);

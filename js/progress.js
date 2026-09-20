@@ -6,12 +6,32 @@
 const NorwegianProgress = (() => {
   const STORAGE_KEY = "nlr_progress";
 
+  function emptyState() {
+    return { letters: {}, words: {}, journey: { unlocked: [], scores: {} } };
+  }
+
+  function withDefaults(parsed) {
+    const base = emptyState();
+    if (!parsed || typeof parsed !== "object") return base;
+    return {
+      letters: parsed.letters || base.letters,
+      words: parsed.words || base.words,
+      journey: {
+        unlocked: Array.isArray(parsed.journey && parsed.journey.unlocked)
+          ? parsed.journey.unlocked
+          : base.journey.unlocked,
+        scores: (parsed.journey && parsed.journey.scores) || base.journey.scores
+      }
+    };
+  }
+
   function load() {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
-      return raw ? JSON.parse(raw) : { letters: {}, words: {} };
+      const parsed = raw ? JSON.parse(raw) : null;
+      return withDefaults(parsed);
     } catch (e) {
-      return { letters: {}, words: {} };
+      return withDefaults(null);
     }
   }
 
@@ -49,8 +69,21 @@ const NorwegianProgress = (() => {
     return { letterCount, wordCount };
   }
 
+  function getJourney() {
+    state = withDefaults(state);
+    return { unlocked: state.journey.unlocked.slice(), scores: Object.assign({}, state.journey.scores) };
+  }
+
+  function saveJourney(journey) {
+    state.journey = {
+      unlocked: Array.isArray(journey.unlocked) ? journey.unlocked.slice() : [],
+      scores: Object.assign({}, journey.scores)
+    };
+    save(state);
+  }
+
   function reset() {
-    state = { letters: {}, words: {} };
+    state = emptyState();
     save(state);
   }
 
@@ -60,6 +93,8 @@ const NorwegianProgress = (() => {
     markWordMastered,
     isWordMastered,
     getSummary,
+    getJourney,
+    saveJourney,
     reset
   };
 })();
