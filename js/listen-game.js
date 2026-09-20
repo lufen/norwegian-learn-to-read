@@ -36,7 +36,7 @@ const ListenGamePage = (() => {
       <div class="detail-actions">
         <button type="button" class="btn" id="replay-sound">🔊 Play sound</button>
       </div>
-      <div class="letter-grid listen-game-options" id="listen-game-options" role="list"></div>
+      <div class="letter-grid listen-game-options" id="listen-game-options" role="group" aria-label="Letter options"></div>
       <div class="feedback" id="listen-game-feedback" aria-live="polite"></div>
       <div class="nav-buttons">
         <button type="button" class="btn btn-outline" id="next-round">Next ⟶</button>
@@ -68,7 +68,6 @@ const ListenGamePage = (() => {
       const tile = document.createElement("button");
       tile.type = "button";
       tile.className = "letter-tile";
-      tile.setAttribute("role", "listitem");
       tile.setAttribute("aria-label", `Letter ${entry.letter}`);
       tile.innerHTML = `<span class="letter-tile-char">${entry.letter}</span>`;
       tile.addEventListener("click", () => checkAnswer(entry, tile, container));
@@ -130,11 +129,11 @@ const ListenGamePage = (() => {
     if (isCorrect) {
       score += 1;
       feedback.className = "feedback feedback-correct";
-      feedback.innerHTML = `🎉 Riktig! "${currentEntry.letter}" sounds like "${currentEntry.sound}".`;
+      feedback.innerHTML = `🎉 Riktig! That's correct — "${currentEntry.letter}" sounds like "${currentEntry.sound}".`;
       window.NorwegianProgress.markLetterMastered(currentEntry.letter);
     } else {
       feedback.className = "feedback feedback-incorrect";
-      feedback.innerHTML = `Not quite — that was <strong>${currentEntry.letter}</strong> (sounds like "${currentEntry.sound}").`;
+      feedback.innerHTML = `Ikke helt — not quite. It was <strong>${currentEntry.letter}</strong> (sounds like "${currentEntry.sound}").`;
     }
 
     updateScoreboard(container);
