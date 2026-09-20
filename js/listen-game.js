@@ -68,6 +68,7 @@ const ListenGamePage = (() => {
       const tile = document.createElement("button");
       tile.type = "button";
       tile.className = "letter-tile";
+      tile.dataset.letter = entry.letter;
       tile.setAttribute("aria-label", `Letter ${entry.letter}`);
       tile.innerHTML = `<span class="letter-tile-char">${entry.letter}</span>`;
       tile.addEventListener("click", () => checkAnswer(entry, tile, container));
@@ -122,11 +123,12 @@ const ListenGamePage = (() => {
 
     optionsContainer.querySelectorAll(".letter-tile").forEach((btn) => {
       btn.disabled = true;
-      const btnLetter = btn.querySelector(".letter-tile-char").textContent;
-      if (btnLetter === currentEntry.letter) {
+      if (btn.dataset.letter === currentEntry.letter) {
         btn.classList.add("correct");
+        btn.insertAdjacentHTML("beforeend", `<span class="tile-status" aria-hidden="true"> ✓</span>`);
       } else if (btn === tile) {
         btn.classList.add("wrong");
+        btn.insertAdjacentHTML("beforeend", `<span class="tile-status" aria-hidden="true"> ✗</span>`);
       }
     });
 

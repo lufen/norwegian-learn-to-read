@@ -292,6 +292,10 @@ a {
   color: #a3282a;
 }
 
+.tile-status {
+  font-size: 1rem;
+}
+
 .letter-tile:disabled {
   cursor: default;
   opacity: 0.85;
