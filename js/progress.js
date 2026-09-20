@@ -70,6 +70,7 @@ const NorwegianProgress = (() => {
   }
 
   function getJourney() {
+    state = withDefaults(state);
     return { unlocked: state.journey.unlocked.slice(), scores: Object.assign({}, state.journey.scores) };
   }
 

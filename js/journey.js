@@ -21,7 +21,6 @@ const JourneyPage = (() => {
   let journey = null;
   let currentLetter = null;
   let answered = false;
-  let justUnlocked = null;
 
   function allLetters() {
     return window.NORWEGIAN_LETTERS;
@@ -76,7 +75,6 @@ const JourneyPage = (() => {
 
   function render(container) {
     journey = loadJourney();
-    justUnlocked = null;
     persist();
 
     container.innerHTML = "";
@@ -151,13 +149,7 @@ const JourneyPage = (() => {
 
     const feedback = container.querySelector("#journey-feedback");
     feedback.className = "feedback";
-    feedback.innerHTML = justUnlocked
-      ? `🎉 New letter unlocked: <strong>${justUnlocked}</strong>!`
-      : "";
-    if (justUnlocked) {
-      feedback.classList.add("feedback-correct");
-      justUnlocked = null;
-    }
+    feedback.innerHTML = "";
 
     updateStatus(container);
     window.NorwegianAudio.speak(currentLetter.toLowerCase());
@@ -205,7 +197,7 @@ const JourneyPage = (() => {
     if (nowMastered && !wasMastered) {
       window.NorwegianProgress.markLetterMastered(currentLetter);
     }
-    justUnlocked = unlockIfReady();
+    const unlockedLetter = unlockIfReady();
     persist();
 
     container.querySelectorAll("#journey-options .letter-tile").forEach((btn) => {
@@ -231,10 +223,10 @@ const JourneyPage = (() => {
       feedback.innerHTML = `Ikke helt — it was <strong>${currentLetter}</strong>${soundHint}.`;
     }
 
-    if (justUnlocked) {
+    if (unlockedLetter) {
       feedback.insertAdjacentHTML(
         "beforeend",
-        `<div class="journey-unlock">🔓 New letter unlocked: <strong>${justUnlocked}</strong>!</div>`
+        `<div class="journey-unlock">🔓 New letter unlocked: <strong>${unlockedLetter}</strong>!</div>`
       );
     }
 
@@ -245,10 +237,11 @@ const JourneyPage = (() => {
     const status = container.querySelector("#journey-status");
     const total = orderedLetters().length;
     const masteredCount = journey.unlocked.filter(isMastered).length;
+    const masteredPercent = total > 0 ? (masteredCount / total) * 100 : 0;
     if (status) {
       status.innerHTML = `
         <div class="journey-counts">Letters in play: ${journey.unlocked.length} / ${total} · Mastered: ${masteredCount}</div>
-        <div class="progress-bar"><div class="progress-bar-fill" style="width:${(masteredCount / total) * 100}%"></div></div>
+        <div class="progress-bar"><div class="progress-bar-fill" style="width:${masteredPercent}%"></div></div>
       `;
     }
 
