@@ -20,6 +20,10 @@ python3 -m http.server 8080
 
 Then open `http://localhost:8080` in a modern browser (Chrome/Edge recommended for the best Norwegian speech-synthesis voice support).
 
+## GitHub Pages
+
+The site deploys automatically to [GitHub Pages](https://lufen.github.io/norwegian-learn-to-read/) when changes are pushed to `main`. In the repository's **Settings → Pages**, select **GitHub Actions** as the deployment source.
+
 ## Project structure
 
 ```
