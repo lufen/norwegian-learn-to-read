@@ -265,6 +265,33 @@ a {
   color: #2e8b46;
 }
 
+/* Listen & Click game */
+.listen-game-card {
+  text-align: center;
+}
+
+.listen-game-score {
+  font-weight: 700;
+  color: var(--no-blue);
+  margin-bottom: 0.75rem;
+}
+
+.listen-game-options {
+  margin-top: 1.5rem;
+}
+
+.letter-tile.correct {
+  background: #d3f3d8;
+  border-color: #2e8b46;
+  color: #2e8b46;
+}
+
+.letter-tile.wrong {
+  background: #ffe6e6;
+  border-color: #a3282a;
+  color: #a3282a;
+}
+
 .letter-detail {
   background: var(--no-white);
   border-radius: var(--radius);
