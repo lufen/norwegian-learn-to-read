@@ -39,244 +39,92 @@ const DECODABLE_BOOKS = [
   {
     id: "first-words",
     title: "First words",
+    icon: "🔤",
     level: "Start here",
-    requiredLetters: ["S", "O", "L", "M", "I", "B", "K", "A", "T"],
+    wordBank: { sol: "☀️", katt: "🐱", bil: "🚗", is: "🍦" },
     pages: [
-      {
-        text: "sol",
-        picture: "☀️",
-        questions: [
-          { prompt: "Finn ordet sol.", choices: ["sol", "bil", "katt"], answer: "sol" },
-          { prompt: "Finn solen.", choices: ["☀️", "🚗", "🐱"], answer: "☀️" }
-        ]
-      },
-      {
-        text: "katt",
-        picture: "🐱",
-        questions: [
-          { prompt: "Finn ordet katt.", choices: ["sol", "katt", "mus"], answer: "katt" },
-          { prompt: "Finn katten.", choices: ["☀️", "🐱", "🚗"], answer: "🐱" }
-        ]
-      },
-      {
-        text: "bil",
-        picture: "🚗",
-        questions: [
-          { prompt: "Finn ordet bil.", choices: ["bil", "is", "sol"], answer: "bil" },
-          { prompt: "Finn bilen.", choices: ["🐱", "🚗", "☀️"], answer: "🚗" }
-        ]
-      },
-      {
-        text: "is",
-        picture: "🍦",
-        questions: [
-          { prompt: "Finn ordet is.", choices: ["is", "mus", "bil"], answer: "is" },
-          { prompt: "Finn isen.", choices: ["🍦", "🐭", "☀️"], answer: "🍦" }
-        ]
-      }
+      { text: "sol", keyword: "sol", picture: "☀️" },
+      { text: "katt", keyword: "katt", picture: "🐱" },
+      { text: "bil", keyword: "bil", picture: "🚗" },
+      { text: "is", keyword: "is", picture: "🍦" }
     ]
   },
   {
     id: "tiny-sentences",
     title: "Tiny sentences",
+    icon: "📝",
     level: "Next step",
-    requiredLetters: ["S", "O", "L", "M", "I", "B", "K", "A", "T", "E", "R"],
+    wordBank: { sol: "☀️", katt: "🐱", bil: "🚗", gul: "🟡" },
     pages: [
-      {
-        text: "Se sol.",
-        picture: "👀☀️",
-        questions: [
-          { prompt: "Finn ordet sol.", choices: ["se", "sol", "bil"], answer: "sol" },
-          { prompt: "Hva ser du?", choices: ["sol", "katt", "is"], answer: "sol" }
-        ]
-      },
-      {
-        text: "Se katt.",
-        picture: "👀🐱",
-        questions: [
-          { prompt: "Finn ordet katt.", choices: ["sol", "katt", "bil"], answer: "katt" },
-          { prompt: "Hva ser du?", choices: ["bil", "is", "katt"], answer: "katt" }
-        ]
-      },
-      {
-        text: "Se bil.",
-        picture: "👀🚗",
-        questions: [
-          { prompt: "Finn ordet bil.", choices: ["bil", "sol", "katt"], answer: "bil" },
-          { prompt: "Hva ser du?", choices: ["is", "bil", "mus"], answer: "bil" }
-        ]
-      },
-      {
-        text: "Sol er gul.",
-        picture: "☀️🟡",
-        questions: [
-          { prompt: "Finn fargen gul.", choices: ["gul", "blå", "rød"], answer: "gul" },
-          { prompt: "Hva er gul?", choices: ["sol", "bil", "katt"], answer: "sol" }
-        ]
-      }
+      { text: "Se sol.", keyword: "sol", picture: "👀☀️" },
+      { text: "Se katt.", keyword: "katt", picture: "👀🐱" },
+      { text: "Se bil.", keyword: "bil", picture: "👀🚗" },
+      { text: "Sol er gul.", keyword: "gul", picture: "☀️🟡" }
     ]
   },
   {
     id: "sol",
     title: "Sol",
+    icon: "☀️",
     level: "Story practice",
-    requiredLetters: ["S", "O", "L"],
+    wordBank: { sol: "☀️", gul: "🟡", lyser: "✨" },
     pages: [
-      {
-        text: "Sol.",
-        picture: "☀️",
-        questions: [
-          { prompt: "Finn solen.", choices: ["☀️", "🐱", "🚗"], answer: "☀️" },
-          { prompt: "Hva ser du?", choices: ["sol", "katt", "bil"], answer: "sol" }
-        ]
-      },
-      {
-        text: "Sol er gul.",
-        picture: "🟡",
-        questions: [
-          { prompt: "Hvilken farge er sol?", choices: ["blå", "gul", "rød"], answer: "gul" },
-          { prompt: "Hvilket ord betyr yellow?", choices: ["gul", "sol", "bil"], answer: "gul" }
-        ]
-      },
-      {
-        text: "Sol lyser.",
-        picture: "☀️✨",
-        questions: [
-          { prompt: "Hva gjør solen?", choices: ["lyser", "sover", "løper"], answer: "lyser" },
-          { prompt: "Finn lyset.", choices: ["✨", "💧", "🌙"], answer: "✨" }
-        ]
-      },
-      {
-        text: "Se sol.",
-        picture: "👀☀️",
-        questions: [
-          { prompt: "Hva skal du se?", choices: ["sol", "katt", "hus"], answer: "sol" },
-          { prompt: "Hvilket ord starter med s?", choices: ["sol", "bil", "og"], answer: "sol" }
-        ]
-      }
+      { text: "Sol.", keyword: "sol", picture: "☀️" },
+      { text: "Sol er gul.", keyword: "gul", picture: "🟡" },
+      { text: "Sol lyser.", keyword: "lyser", picture: "✨" },
+      { text: "Se sol.", keyword: "sol", picture: "👀☀️" }
     ]
   },
   {
     id: "katt",
     title: "Katt",
+    icon: "🐱",
     level: "Story practice",
-    requiredLetters: ["K", "A", "T", "S", "O"],
+    wordBank: { katt: "🐱", sover: "💤", sol: "☀️", løper: "💨" },
     pages: [
-      {
-        text: "Katt.",
-        picture: "🐱",
-        questions: [
-          { prompt: "Finn katten.", choices: ["🐶", "🐱", "🐟"], answer: "🐱" },
-          { prompt: "Hva ser du?", choices: ["katt", "sol", "bil"], answer: "katt" }
-        ]
-      },
-      {
-        text: "Katt sover.",
-        picture: "🐱💤",
-        questions: [
-          { prompt: "Hva gjør katten?", choices: ["sover", "løper", "spiser"], answer: "sover" },
-          { prompt: "Finn det som viser søvn.", choices: ["💤", "☀️", "🚗"], answer: "💤" }
-        ]
-      },
-      {
-        text: "Katt ser sol.",
-        picture: "🐱👀☀️",
-        questions: [
-          { prompt: "Hva ser katten?", choices: ["sol", "mus", "hus"], answer: "sol" },
-          { prompt: "Hvem ser?", choices: ["katt", "sol", "bil"], answer: "katt" }
-        ]
-      },
-      {
-        text: "Katt løper.",
-        picture: "🐱💨",
-        questions: [
-          { prompt: "Hva gjør katten nå?", choices: ["løper", "sover", "sitter"], answer: "løper" },
-          { prompt: "Finn fart.", choices: ["💨", "💤", "💧"], answer: "💨" }
-        ]
-      }
+      { text: "Katt.", keyword: "katt", picture: "🐱" },
+      { text: "Katt sover.", keyword: "sover", picture: "🐱💤" },
+      { text: "Katt ser sol.", keyword: "sol", picture: "🐱👀☀️" },
+      { text: "Katt løper.", keyword: "løper", picture: "🐱💨" }
     ]
   },
   {
     id: "bil",
     title: "Bil",
+    icon: "🚗",
     level: "Story practice",
-    requiredLetters: ["B", "I", "L", "S", "O"],
+    wordBank: { bil: "🚗", blå: "🔵", kjører: "💨" },
     pages: [
-      {
-        text: "Bil.",
-        picture: "🚗",
-        questions: [
-          { prompt: "Finn bilen.", choices: ["🚗", "🐱", "☀️"], answer: "🚗" },
-          { prompt: "Hva ser du?", choices: ["bil", "sol", "katt"], answer: "bil" }
-        ]
-      },
-      {
-        text: "Bil er blå.",
-        picture: "🚙🔵",
-        questions: [
-          { prompt: "Hvilken farge er bilen?", choices: ["blå", "gul", "rød"], answer: "blå" },
-          { prompt: "Hvilket ord betyr blue?", choices: ["blå", "bil", "sol"], answer: "blå" }
-        ]
-      },
-      {
-        text: "Bil kjører.",
-        picture: "🚗💨",
-        questions: [
-          { prompt: "Hva gjør bilen?", choices: ["kjører", "sover", "spiser"], answer: "kjører" },
-          { prompt: "Finn bilen som kjører.", choices: ["🚗💨", "🐱💤", "☀️"], answer: "🚗💨" }
-        ]
-      },
-      {
-        text: "Se bil.",
-        picture: "👀🚗",
-        questions: [
-          { prompt: "Hva skal du se?", choices: ["bil", "katt", "sol"], answer: "bil" },
-          { prompt: "Hvilket ord starter med b?", choices: ["bil", "sol", "is"], answer: "bil" }
-        ]
-      }
+      { text: "Bil.", keyword: "bil", picture: "🚗" },
+      { text: "Bil er blå.", keyword: "blå", picture: "🔵" },
+      { text: "Bil kjører.", keyword: "kjører", picture: "🚗💨" },
+      { text: "Se bil.", keyword: "bil", picture: "👀🚗" }
     ]
   },
   {
     id: "mus",
     title: "Mus",
+    icon: "🐭",
     level: "Story practice",
-    requiredLetters: ["M", "U", "S", "O", "L"],
+    wordBank: { mus: "🐭", sol: "☀️", løper: "💨", liten: "🤏" },
     pages: [
-      {
-        text: "Mus.",
-        picture: "🐭",
-        questions: [
-          { prompt: "Finn musen.", choices: ["🐭", "🐶", "🐟"], answer: "🐭" },
-          { prompt: "Hva ser du?", choices: ["mus", "sol", "bil"], answer: "mus" }
-        ]
-      },
-      {
-        text: "Mus ser sol.",
-        picture: "🐭👀☀️",
-        questions: [
-          { prompt: "Hva ser musen?", choices: ["sol", "katt", "hus"], answer: "sol" },
-          { prompt: "Hvem ser?", choices: ["mus", "sol", "bil"], answer: "mus" }
-        ]
-      },
-      {
-        text: "Mus løper.",
-        picture: "🐭💨",
-        questions: [
-          { prompt: "Hva gjør musen?", choices: ["løper", "sover", "sitter"], answer: "løper" },
-          { prompt: "Finn fart.", choices: ["💨", "💤", "☀️"], answer: "💨" }
-        ]
-      },
-      {
-        text: "Mus er liten.",
-        picture: "🐭🤏",
-        questions: [
-          { prompt: "Hvordan er musen?", choices: ["liten", "stor", "gul"], answer: "liten" },
-          { prompt: "Finn musen.", choices: ["🐭", "🐘", "🚗"], answer: "🐭" }
-        ]
-      }
+      { text: "Mus.", keyword: "mus", picture: "🐭" },
+      { text: "Mus ser sol.", keyword: "sol", picture: "🐭👀☀️" },
+      { text: "Mus løper.", keyword: "løper", picture: "🐭💨" },
+      { text: "Mus er liten.", keyword: "liten", picture: "🐭🤏" }
     ]
   }
 ];
+
+// Derive each book's letters directly from the words it actually contains,
+// instead of hand-maintaining a separate (and easily inaccurate) list.
+DECODABLE_BOOKS.forEach((book) => {
+  const letters = new Set();
+  book.pages.forEach((page) => {
+    page.text.toUpperCase().replace(/[^A-ZÆØÅ]/g, "").split("").forEach((ch) => letters.add(ch));
+  });
+  book.requiredLetters = Array.from(letters).sort();
+});
 
 const WORD_LEVELS = [
   {

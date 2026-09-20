@@ -442,6 +442,21 @@ a {
   font-weight: 400;
 }
 
+.book-icon {
+  font-size: 1.4rem;
+}
+
+.reading-prompt {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.reading-prompt h3 {
+  margin: 0;
+}
+
 .reading-page {
   max-width: 560px;
   margin: 0 auto;

@@ -9,7 +9,7 @@ A frontend-only, static web app that helps beginners learn to read and write Nor
 - **Letter Journey** — a progression game: you start with just two letters, each letter must be answered correctly a few times to be mastered, and a new letter unlocks once every letter in play is mastered.
 - **Spell Words** — words are broken into phonemes/syllables that can be played individually and then blended into the full word.
 - **Write Words** — dictation exercise: listen to a word and type it; the app checks your spelling and highlights matches/mismatches. A simple content filter prevents inappropriate typed words from being echoed back on screen.
-- **Little Books** — a gradual path from first-word matching to tiny sentences and short decodable stories, with randomized comprehension questions that can be practised repeatedly.
+- **Little Books** — a gradual path from first-word matching to tiny sentences and short decodable stories. Every book uses only its own small word bank, so all comprehension questions stay fully decodable; the sentence and the question are both spoken aloud automatically so a child can play through independently, without a parent needing to read anything out loud.
 - **Write Letters** — animated stroke-order demo for each letter; the child writes on real paper while watching how to form it.
 - **My Progress** — tracks mastered letters and words locally (no login required).
 

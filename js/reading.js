@@ -1,5 +1,12 @@
 /**
  * Decodable mini-books — short texts built from a small, known letter set.
+ *
+ * Comprehension questions are generated from each book's own small
+ * `wordBank` using two fixed, audio-backed templates ("Finn ordet" /
+ * "Pek på bildet"). This keeps every question fully decodable (no
+ * surprise vocabulary), predictable in structure (so a child recognizes
+ * the pattern instead of parsing a new sentence each time), and safe for
+ * independent play since the prompt itself is always spoken aloud.
  */
 
 const ReadingPage = (() => {
@@ -16,7 +23,7 @@ const ReadingPage = (() => {
     savePosition();
     const book = window.DECODABLE_BOOKS[bookIndex];
     const page = book.pages[pageIndex];
-    const question = createQuestion(page);
+    const question = createQuestion(book, page);
     questionNumber += 1;
     container.innerHTML = `
       <div class="page-header">
@@ -27,6 +34,7 @@ const ReadingPage = (() => {
         <div class="reading-book-picker">
           ${window.DECODABLE_BOOKS.map((item, index) => `
             <button type="button" class="btn btn-level${index === bookIndex ? " active" : ""}" data-book="${index}">
+              <span class="book-icon" aria-hidden="true">${item.icon || "📖"}</span>
               ${item.title}<small>${item.level || ""}</small>
             </button>
           `).join("")}
@@ -41,7 +49,10 @@ const ReadingPage = (() => {
           <div class="reading-questions">
             <section class="reading-question">
               <p class="reading-question-count">Question ${questionNumber}</p>
-              <h3>${question.prompt}</h3>
+              <div class="reading-prompt">
+                <button type="button" class="btn btn-icon" id="replay-prompt" aria-label="Play the question aloud">🔊</button>
+                <h3>${question.prompt}</h3>
+              </div>
               <div class="reading-choices">
                 ${question.choices.map((choice) => `<button type="button" class="reading-choice" data-choice="${choice}">${choice}</button>`).join("")}
               </div>
@@ -75,13 +86,16 @@ const ReadingPage = (() => {
         window.setTimeout(() => window.NorwegianAudio.speak(word.replace(/[.?!]/g, "")), index * 450);
       });
     });
+    container.querySelector("#replay-prompt").addEventListener("click", () => {
+      window.NorwegianAudio.speak(question.spokenPrompt);
+    });
     container.querySelector(".reading-questions").addEventListener("click", (event) => {
       const button = event.target.closest(".reading-choice");
       if (!button) return;
       const feedback = button.closest(".reading-question").querySelector(".reading-feedback");
       const correct = button.dataset.choice === question.answer;
       feedback.className = `feedback reading-feedback ${correct ? "feedback-correct" : "feedback-incorrect"}`;
-      feedback.textContent = correct ? "Ja! Du fant riktig. You found it!" : "Prøv igjen. Try again.";
+      feedback.textContent = correct ? "🎉 Riktig! Du fant det!" : "Ikke helt — prøv igjen.";
     });
     container.querySelector("#new-question").addEventListener("click", () => render(container));
     container.querySelector("#previous-page").addEventListener("click", () => {
@@ -96,18 +110,50 @@ const ReadingPage = (() => {
       savePosition();
       render(container);
     });
+
+    // Read the sentence, then the question prompt, aloud automatically so a
+    // child can complete the page by listening alone, without needing an
+    // adult to read anything out loud for them.
+    window.NorwegianAudio.speak(page.text);
+    window.setTimeout(() => window.NorwegianAudio.speak(question.spokenPrompt), 900);
   }
 
   function savePosition() {
     window.NorwegianProgress.saveActivityState("reading", { bookIndex, pageIndex });
   }
 
-  function createQuestion(page) {
-    const source = page.questions[Math.floor(Math.random() * page.questions.length)];
+  /**
+   * Build one of two decodable, audio-backed question types from the book's
+   * own word bank: matching a spoken word to its printed form, or matching
+   * a spoken word to its picture. Distractors are always drawn from the
+   * same book's word bank, so nothing undecodable ever appears.
+   */
+  function createQuestion(book, page) {
+    const keyword = page.keyword;
+    const bank = book.wordBank || {};
+    const otherWords = Object.keys(bank).filter((word) => word !== keyword);
+    const distractorCount = Math.min(2, otherWords.length);
+    const distractors = shuffle(otherWords).slice(0, distractorCount);
+    const useWordMatch = Math.random() < 0.5 || distractors.length === 0;
+
+    if (useWordMatch || distractors.length === 0) {
+      const choices = shuffle([keyword, ...distractors]);
+      return {
+        prompt: "Finn ordet.",
+        spokenPrompt: `Finn ordet ${keyword}.`,
+        answer: keyword,
+        choices
+      };
+    }
+
+    const correctPicture = bank[keyword] || page.picture;
+    const distractorPictures = distractors.map((word) => bank[word]).filter(Boolean);
+    const choices = shuffle([correctPicture, ...distractorPictures]);
     return {
-      prompt: source.prompt,
-      answer: source.answer,
-      choices: shuffle(source.choices)
+      prompt: "Pek på bildet.",
+      spokenPrompt: `Pek på bildet av ${keyword}.`,
+      answer: correctPicture,
+      choices
     };
   }
 
