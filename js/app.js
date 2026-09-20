@@ -3,13 +3,23 @@
  */
 
 const App = (() => {
-  const pages = {
-    home: renderHome,
-    alphabet: (container) => window.AlphabetPage.render(container),
-    spelling: (container) => window.SpellingPage.render(container),
-    writing: (container) => window.WritingPage.render(container),
-    progress: (container) => window.ProgressPage.render(container)
-  };
+  const VALID_PAGES = ["home", "alphabet", "spelling", "writing", "progress"];
+
+  function getRenderer(pageName) {
+    switch (pageName) {
+      case "alphabet":
+        return (container) => window.AlphabetPage.render(container);
+      case "spelling":
+        return (container) => window.SpellingPage.render(container);
+      case "writing":
+        return (container) => window.WritingPage.render(container);
+      case "progress":
+        return (container) => window.ProgressPage.render(container);
+      case "home":
+      default:
+        return renderHome;
+    }
+  }
 
   function renderHome(container) {
     container.innerHTML = "";
@@ -50,15 +60,15 @@ const App = (() => {
 
   function navigate(pageName) {
     const container = document.getElementById("page-container");
-    const isKnownPage = Object.prototype.hasOwnProperty.call(pages, pageName);
-    const renderer = isKnownPage ? pages[pageName] : pages.home;
+    const normalizedPage = VALID_PAGES.includes(pageName) ? pageName : "home";
+    const renderer = getRenderer(normalizedPage);
     renderer(container);
 
     document.querySelectorAll(".nav-link").forEach((link) => {
-      link.classList.toggle("active", link.dataset.page === pageName);
+      link.classList.toggle("active", link.dataset.page === normalizedPage);
     });
 
-    window.location.hash = pageName === "home" ? "" : pageName;
+    window.location.hash = normalizedPage === "home" ? "" : normalizedPage;
   }
 
   function init() {
@@ -79,7 +89,7 @@ const App = (() => {
     });
 
     const initialPage = (window.location.hash || "#home").replace("#", "") || "home";
-    navigate(Object.prototype.hasOwnProperty.call(pages, initialPage) ? initialPage : "home");
+    navigate(initialPage);
   }
 
   return { init, navigate };
