@@ -82,17 +82,20 @@ const ListenGamePage = (() => {
     window.NorwegianAudio.speak(currentEntry.letter.toLowerCase());
   }
 
+  function excludeLetter(letters, letter) {
+    return letters.filter((entry) => entry.letter !== letter);
+  }
+
   function pickRandomEntry() {
     const letters = window.NORWEGIAN_LETTERS;
-    const pool = currentEntry
-      ? letters.filter((entry) => entry.letter !== currentEntry.letter)
-      : letters;
-    return pool[Math.floor(Math.random() * pool.length)];
+    const pool = currentEntry ? excludeLetter(letters, currentEntry.letter) : letters;
+    const candidates = pool.length > 0 ? pool : letters;
+    return candidates[Math.floor(Math.random() * candidates.length)];
   }
 
   function buildOptions(correctEntry) {
     const letters = window.NORWEGIAN_LETTERS;
-    const pool = letters.filter((entry) => entry.letter !== correctEntry.letter);
+    const pool = excludeLetter(letters, correctEntry.letter);
     shuffle(pool);
     const distractors = pool.slice(0, Math.min(OPTION_COUNT - 1, pool.length));
     const options = [correctEntry, ...distractors];
