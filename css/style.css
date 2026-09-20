@@ -292,6 +292,11 @@ a {
   color: #a3282a;
 }
 
+.letter-tile:disabled {
+  cursor: default;
+  opacity: 0.85;
+}
+
 .letter-detail {
   background: var(--no-white);
   border-radius: var(--radius);

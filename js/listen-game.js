@@ -121,6 +121,7 @@ const ListenGamePage = (() => {
     const isCorrect = entry.letter === currentEntry.letter;
 
     optionsContainer.querySelectorAll(".letter-tile").forEach((btn) => {
+      btn.disabled = true;
       const btnLetter = btn.querySelector(".letter-tile-char").textContent;
       if (btnLetter === currentEntry.letter) {
         btn.classList.add("correct");
@@ -133,7 +134,6 @@ const ListenGamePage = (() => {
       score += 1;
       feedback.className = "feedback feedback-correct";
       feedback.innerHTML = `🎉 Riktig! That's correct — "${currentEntry.letter}" sounds like "${currentEntry.sound}".`;
-      window.NorwegianProgress.markLetterMastered(currentEntry.letter);
     } else {
       feedback.className = "feedback feedback-incorrect";
       feedback.innerHTML = `Ikke helt — not quite. It was <strong>${currentEntry.letter}</strong> (sounds like "${currentEntry.sound}").`;
