@@ -40,10 +40,16 @@ const ProgressPage = (() => {
     container.appendChild(resetWrap);
 
     resetWrap.querySelector("#reset-progress").addEventListener("click", () => {
-      if (window.confirm("Reset all progress? This cannot be undone.")) {
-        window.NorwegianProgress.reset();
-        render(container);
-      }
+      window.ChildConfirm.show({
+        message: "Reset everything? All your stars will disappear.",
+        spokenMessage: "Are you sure you want to reset everything? All your stars will disappear.",
+        confirmLabel: "🗑️ Yes, reset everything",
+        cancelLabel: "↩️ No, keep my progress",
+        onConfirm: () => {
+          window.NorwegianProgress.reset();
+          render(container);
+        }
+      });
     });
   }
 

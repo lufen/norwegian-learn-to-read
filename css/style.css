@@ -469,6 +469,102 @@ a {
   margin-right: auto;
 }
 
+/* Child-safe confirm overlay */
+.child-confirm-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(20, 20, 40, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1rem;
+}
+
+.child-confirm-card {
+  background: var(--no-white);
+  border-radius: var(--radius);
+  padding: 1.75rem;
+  max-width: 360px;
+  width: 100%;
+  text-align: center;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.25);
+}
+
+.child-confirm-icon {
+  font-size: 3rem;
+}
+
+.child-confirm-message {
+  font-size: 1.15rem;
+  font-weight: 600;
+  margin: 0.5rem 0 1.25rem;
+}
+
+.child-confirm-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.build-slots {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.4rem;
+  margin: 1rem 0;
+}
+
+.build-slot {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2.4rem;
+  height: 2.6rem;
+  border-bottom: 4px solid var(--no-blue);
+  font-size: 1.6rem;
+  font-weight: 700;
+  text-transform: lowercase;
+  color: var(--no-blue);
+}
+
+.build-slot-space {
+  min-width: 1.2rem;
+  border-bottom: none;
+}
+
+.build-bank {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.build-tile {
+  border: 3px solid var(--no-blue);
+  border-radius: var(--radius);
+  background: var(--no-white);
+  min-width: 2.6rem;
+  min-height: 2.6rem;
+  padding: 0.4rem 0.6rem;
+  font-size: 1.4rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.build-tile:hover,
+.build-tile:focus-visible {
+  border-color: var(--no-red);
+  background: #fff0f0;
+}
+
+.build-tile.used,
+.build-tile:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+
 .reading-prompt {
   display: flex;
   align-items: center;

@@ -5,6 +5,19 @@
 const App = (() => {
   const VALID_PAGES = ["home", "alphabet", "journey", "reading", "spelling", "handwriting", "writing", "progress"];
 
+  // Spoken labels for each destination so a non-reading child hears where a
+  // tap is taking them, both from the home tiles and the top nav links.
+  const PAGE_SPOKEN_LABELS = {
+    home: "Hjem",
+    alphabet: "Bokstaver og lyder",
+    journey: "Bokstavreisen",
+    reading: "Les en liten bok",
+    spelling: "Stave ord",
+    handwriting: "Skriv bokstaven",
+    writing: "Skriv ord",
+    progress: "Min fremgang"
+  };
+
   function getRenderer(pageName) {
     switch (pageName) {
       case "alphabet":
@@ -79,6 +92,9 @@ const App = (() => {
   function navigate(pageName) {
     const container = document.getElementById("page-container");
     const normalizedPage = VALID_PAGES.includes(pageName) ? pageName : "home";
+    if (window.NorwegianAudio && PAGE_SPOKEN_LABELS[normalizedPage]) {
+      window.NorwegianAudio.speak(PAGE_SPOKEN_LABELS[normalizedPage]);
+    }
     const renderer = getRenderer(normalizedPage);
     renderer(container);
 

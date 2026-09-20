@@ -1,11 +1,22 @@
 /**
- * Writing/Dictation module — plays a word, the learner types it, and the
- * app checks the spelling letter-by-letter with instant feedback.
+ * Write Words — build-the-word dictation activity.
+ *
+ * Previously this required typing on a physical keyboard, which conflicted
+ * with the rest of the app (tap/click or paper-based) and isn't realistic
+ * for a 5-year-old without reliable keyboard skills. Now the child hears a
+ * word and taps letter tiles, in order, into empty slots — no typing, no
+ * keyboard needed. A wrong tile is rejected immediately (with a nudge to
+ * try again) rather than being placed and shown wrong afterward, and a
+ * space in a phrase is filled in automatically since it isn't a sound the
+ * child places themselves.
  */
 
 const WritingPage = (() => {
   let currentLevelIndex = 1;
   let currentWordIndex = 0;
+  let slots = [];
+  let bank = [];
+  let solved = false;
 
   function render(container) {
     const saved = window.NorwegianProgress.getActivityState("writing");
@@ -15,23 +26,27 @@ const WritingPage = (() => {
     currentLevelIndex = window.WORD_LEVELS.indexOf(level);
     currentWordIndex = Math.min(currentWordIndex, level.words.length - 1);
     savePosition();
+
+    const word = level.words[currentWordIndex];
+    setupAttempt(word);
+
     container.innerHTML = "";
 
     const heading = document.createElement("div");
     heading.className = "page-header";
     heading.innerHTML = `
       <h2>Skriv Ord — Write Words</h2>
-      <p>Listen to the word, then type what you hear.</p>
+      <p>Listen to the word, then tap the letters in order to build it.</p>
     `;
     container.appendChild(heading);
 
     const levelPicker = document.createElement("div");
     levelPicker.className = "level-picker";
-    window.WORD_LEVELS.forEach((level, idx) => {
+    window.WORD_LEVELS.forEach((lvl, idx) => {
       const btn = document.createElement("button");
       btn.type = "button";
       btn.className = "btn btn-level" + (idx === currentLevelIndex ? " active" : "");
-      btn.textContent = level.name;
+      btn.textContent = lvl.name;
       btn.addEventListener("click", () => {
         currentLevelIndex = idx;
         currentWordIndex = 0;
@@ -42,8 +57,6 @@ const WritingPage = (() => {
     });
     container.appendChild(levelPicker);
 
-    const word = level.words[currentWordIndex];
-
     const card = document.createElement("div");
     card.className = "word-card";
     card.innerHTML = `
@@ -52,11 +65,11 @@ const WritingPage = (() => {
         <button type="button" class="btn" id="play-word">🔊 Play word</button>
         <button type="button" class="btn btn-secondary" id="play-slow">🐢 Play slowly</button>
       </div>
-      <form id="dictation-form" autocomplete="off">
-        <label for="dictation-input" class="visually-hidden">Type the word you heard</label>
-        <input type="text" id="dictation-input" class="dictation-input" placeholder="Type here..." />
-        <button type="submit" class="btn">Check</button>
-      </form>
+      <div class="build-slots" id="build-slots" aria-live="polite"></div>
+      <div class="build-bank" id="build-bank"></div>
+      <div class="detail-actions">
+        <button type="button" class="btn btn-outline" id="clear-attempt">🔄 Clear and try again</button>
+      </div>
       <div class="feedback" id="feedback" aria-live="polite"></div>
       <div class="nav-buttons">
         <button type="button" class="btn btn-outline" id="prev-word">⟵ Previous</button>
@@ -71,16 +84,10 @@ const WritingPage = (() => {
     card.querySelector("#play-slow").addEventListener("click", () => {
       window.NorwegianAudio.speak(word.text, { rate: 0.6 });
     });
-
-    const form = card.querySelector("#dictation-form");
-    const input = card.querySelector("#dictation-input");
-    const feedback = card.querySelector("#feedback");
-
-    form.addEventListener("submit", (e) => {
-      e.preventDefault();
-      checkAnswer(word.text, input.value, feedback);
+    card.querySelector("#clear-attempt").addEventListener("click", () => {
+      setupAttempt(word);
+      renderSlotsAndBank(card, word);
     });
-
     card.querySelector("#prev-word").addEventListener("click", () => {
       currentWordIndex = (currentWordIndex - 1 + level.words.length) % level.words.length;
       savePosition();
@@ -91,6 +98,8 @@ const WritingPage = (() => {
       savePosition();
       render(container);
     });
+
+    renderSlotsAndBank(card, word);
   }
 
   function savePosition() {
@@ -100,53 +109,84 @@ const WritingPage = (() => {
     });
   }
 
-  function checkAnswer(correctText, userText, feedbackEl) {
-    const correct = correctText.trim().toLowerCase();
-    const attempt = (userText || "").trim().toLowerCase();
+  /** Build the empty-slot layout (spaces auto-filled) and a shuffled tile bank. */
+  function setupAttempt(word) {
+    solved = false;
+    const chars = word.text.split("");
+    slots = chars.map((ch) => (ch === " " ? { char: " ", filled: true, space: true } : { char: ch, filled: false }));
 
-    if (window.NorwegianContentFilter && window.NorwegianContentFilter.containsBlockedWord(attempt)) {
-      feedbackEl.className = "feedback feedback-incorrect";
-      feedbackEl.innerHTML = `Let's try that word again — type only the word you heard.`;
-      return;
-    }
-
-    if (attempt === correct) {
-      feedbackEl.className = "feedback feedback-correct";
-      feedbackEl.innerHTML = `🎉 Riktig! That's correct — great job!`;
-      window.NorwegianProgress.markWordMastered(correct);
-      return;
-    }
-
-    const maxLen = Math.max(correct.length, attempt.length);
-    let highlighted = "";
-    for (let i = 0; i < maxLen; i++) {
-      const expectedChar = escapeHtml(correct[i] || "");
-      const typedChar = attempt[i];
-      if (typedChar === undefined) {
-        highlighted += `<span class="char-missing">${expectedChar}</span>`;
-      } else if (typedChar === correct[i]) {
-        highlighted += `<span class="char-correct">${escapeHtml(typedChar)}</span>`;
-      } else {
-        highlighted += `<span class="char-wrong">${escapeHtml(typedChar)}</span>`;
-      }
-    }
-
-    feedbackEl.className = "feedback feedback-incorrect";
-    feedbackEl.innerHTML = `
-      <p>Not quite — try again! Here's how your answer compares:</p>
-      <p class="char-compare">${highlighted}</p>
-      <p class="correct-answer">Correct spelling: <strong>${escapeHtml(correct)}</strong></p>
-    `;
+    const neededLetters = chars.filter((ch) => ch !== " ");
+    const distractorPool = (window.NORWEGIAN_LETTERS || [])
+      .map((entry) => entry.letter.toLowerCase())
+      .filter((letter) => !neededLetters.includes(letter));
+    const distractors = shuffle(distractorPool).slice(0, Math.min(2, distractorPool.length));
+    bank = shuffle(neededLetters.concat(distractors)).map((letter, index) => ({
+      id: `${letter}-${index}`,
+      letter,
+      used: false
+    }));
   }
 
-  function escapeHtml(str) {
-    return String(str).replace(/[&<>"']/g, (ch) => ({
-      "&": "&amp;",
-      "<": "&lt;",
-      ">": "&gt;",
-      '"': "&quot;",
-      "'": "&#39;"
-    })[ch]);
+  function renderSlotsAndBank(card, word) {
+    const slotsEl = card.querySelector("#build-slots");
+    const bankEl = card.querySelector("#build-bank");
+    const feedback = card.querySelector("#feedback");
+
+    slotsEl.innerHTML = slots
+      .map((slot) => {
+        if (slot.space) return `<span class="build-slot build-slot-space" aria-hidden="true"></span>`;
+        return `<span class="build-slot${slot.filled ? " filled" : ""}">${slot.filled ? slot.char : ""}</span>`;
+      })
+      .join("");
+
+    bankEl.innerHTML = bank
+      .map((tile) => `<button type="button" class="build-tile${tile.used ? " used" : ""}" data-tile-id="${tile.id}" ${tile.used ? "disabled" : ""}>${tile.letter}</button>`)
+      .join("");
+
+    bankEl.querySelectorAll(".build-tile").forEach((btn) => {
+      btn.addEventListener("click", () => handleTileTap(btn.dataset.tileId, card, word));
+    });
+
+    if (!solved) {
+      feedback.className = "feedback";
+      feedback.innerHTML = "";
+    }
+  }
+
+  function handleTileTap(tileId, card, word) {
+    if (solved) return;
+    const tile = bank.find((item) => item.id === tileId);
+    if (!tile || tile.used) return;
+
+    const nextSlotIndex = slots.findIndex((slot) => !slot.filled);
+    if (nextSlotIndex === -1) return;
+    const expected = slots[nextSlotIndex].char;
+
+    const feedback = card.querySelector("#feedback");
+    if (tile.letter === expected) {
+      slots[nextSlotIndex].filled = true;
+      tile.used = true;
+      window.NorwegianAudio.speak(tile.letter);
+      renderSlotsAndBank(card, word);
+      if (slots.every((slot) => slot.filled)) {
+        solved = true;
+        feedback.className = "feedback feedback-correct";
+        feedback.innerHTML = "🎉 Riktig! You built the word!";
+        window.NorwegianProgress.markWordMastered(word.text.trim().toLowerCase());
+      }
+    } else {
+      feedback.className = "feedback feedback-incorrect";
+      feedback.textContent = "Not that one — listen again and try another letter.";
+    }
+  }
+
+  function shuffle(items) {
+    const copy = items.slice();
+    for (let index = copy.length - 1; index > 0; index -= 1) {
+      const swapIndex = Math.floor(Math.random() * (index + 1));
+      [copy[index], copy[swapIndex]] = [copy[swapIndex], copy[index]];
+    }
+    return copy;
   }
 
   return { render };

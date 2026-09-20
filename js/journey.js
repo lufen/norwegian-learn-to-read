@@ -119,12 +119,18 @@ const JourneyPage = (() => {
     });
     card.querySelector("#journey-next").addEventListener("click", () => startRound(container));
     resetWrap.querySelector("#journey-reset").addEventListener("click", () => {
-      if (window.confirm("Start the letter journey over from the first letters?")) {
-        currentLetter = null;
-        journey = { unlocked: randomLetters(orderedLetters(), STARTING_LETTERS), scores: {} };
-        persist();
-        render(container);
-      }
+      window.ChildConfirm.show({
+        message: "Start over? You'll lose your unlocked letters.",
+        spokenMessage: "Do you want to start the letter journey over? You will lose your unlocked letters.",
+        confirmLabel: "🔄 Yes, start over",
+        cancelLabel: "↩️ No, keep going",
+        onConfirm: () => {
+          currentLetter = null;
+          journey = { unlocked: randomLetters(orderedLetters(), STARTING_LETTERS), scores: {} };
+          persist();
+          render(container);
+        }
+      });
     });
 
     startRound(container);
