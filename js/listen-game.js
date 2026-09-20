@@ -14,6 +14,8 @@ const ListenGamePage = (() => {
 
   function render(container) {
     container.innerHTML = "";
+    score = 0;
+    attempts = 0;
 
     const heading = document.createElement("div");
     heading.className = "page-header";
@@ -83,7 +85,10 @@ const ListenGamePage = (() => {
 
   function pickRandomEntry() {
     const letters = window.NORWEGIAN_LETTERS;
-    return letters[Math.floor(Math.random() * letters.length)];
+    const pool = currentEntry
+      ? letters.filter((entry) => entry.letter !== currentEntry.letter)
+      : letters;
+    return pool[Math.floor(Math.random() * pool.length)];
   }
 
   function buildOptions(correctEntry) {
