@@ -4,8 +4,9 @@
  */
 
 const SpellingPage = (() => {
-  let currentLevelIndex = 1; // default to Level 2 (short words)
+  let currentLevelIndex = 1; // default to Level 2 (simple words)
   let currentWordIndex = 0;
+  let introSpoken = false;
 
   function render(container) {
     const saved = window.NorwegianProgress.getActivityState("spelling");
@@ -23,6 +24,10 @@ const SpellingPage = (() => {
       <h2>Stave Ord — Spell Words</h2>
       <p>Listen to each part of the word, then blend them together.</p>
     `;
+    if (!introSpoken) {
+      introSpoken = true;
+      window.NorwegianAudio.speak("Hør hver lyd, og sett dem sammen til et ord.");
+    }
     container.appendChild(heading);
 
     const levelPicker = document.createElement("div");
@@ -48,12 +53,13 @@ const SpellingPage = (() => {
     card.className = "word-card";
     card.innerHTML = `
       <div class="word-emoji" aria-hidden="true">${word.emoji || "📝"}</div>
+      ${window.Curriculum ? window.Curriculum.newLetterBadge(word.text) : ""}
       <div class="word-syllables" id="word-syllables"></div>
       <p class="word-translation">${word.translation}</p>
       <div class="detail-actions">
         <button type="button" class="btn" id="blend-word">🔊 Play whole word</button>
         <button type="button" class="btn btn-secondary" id="mark-word-mastered">
-          ${window.NorwegianProgress.isWordMastered(word.text) ? "✅ Mastered" : "☆ Mark as mastered"}
+          ${window.NorwegianProgress.isWordMastered(word.text) ? "✅ I can read it" : "☆ I can read this word"}
         </button>
       </div>
       <div class="nav-buttons">

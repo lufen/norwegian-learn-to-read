@@ -4,7 +4,13 @@
  */
 
 const NorwegianProgress = (() => {
-  const STORAGE_KEY = "nlr_progress";
+  /** Each child profile gets its own storage key; see js/profiles.js. */
+  function storageKey() {
+    if (window.NorwegianProfiles) {
+      return window.NorwegianProfiles.storageKeyFor(window.NorwegianProfiles.getActiveId());
+    }
+    return "nlr_progress";
+  }
 
   function emptyState() {
     return { letters: {}, words: {}, journey: { unlocked: [], scores: {} }, activities: {} };
@@ -30,7 +36,7 @@ const NorwegianProgress = (() => {
 
   function load() {
     try {
-      const raw = localStorage.getItem(STORAGE_KEY);
+      const raw = localStorage.getItem(storageKey());
       const parsed = raw ? JSON.parse(raw) : null;
       return withDefaults(parsed);
     } catch (e) {
@@ -40,7 +46,7 @@ const NorwegianProgress = (() => {
 
   function save(state) {
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      localStorage.setItem(storageKey(), JSON.stringify(state));
     } catch (e) {
       /* ignore storage errors */
     }
@@ -82,6 +88,17 @@ const NorwegianProgress = (() => {
     return { unlocked: state.journey.unlocked.slice(), scores: Object.assign({}, state.journey.scores) };
   }
 
+  /**
+   * Letters actually demonstrated as durably known via Letter Journey's
+   * spaced, repeated-correct-answer check — distinct from the self-reported
+   * "I know this letter" tap on the Letters & Sounds page, which only
+   * reflects the child's own claim, not a tested result.
+   */
+  function getJourneyMasteredLetters(threshold) {
+    const scores = state.journey.scores || {};
+    return Object.keys(scores).filter((letter) => scores[letter] >= threshold);
+  }
+
   function saveJourney(journey) {
     state.journey = {
       unlocked: Array.isArray(journey.unlocked) ? journey.unlocked.slice() : [],
@@ -105,6 +122,11 @@ const NorwegianProgress = (() => {
     save(state);
   }
 
+  /** Re-reads state from storage — call after switching the active profile. */
+  function reloadState() {
+    state = load();
+  }
+
   return {
     markLetterMastered,
     isLetterMastered,
@@ -114,9 +136,11 @@ const NorwegianProgress = (() => {
     getSummary,
     getJourney,
     saveJourney,
+    getJourneyMasteredLetters,
     getActivityState,
     saveActivityState,
-    reset
+    reset,
+    reloadState
   };
 })();
 

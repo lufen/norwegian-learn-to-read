@@ -23,6 +23,10 @@ const JourneyPage = (() => {
   let journey = null;
   let currentLetter = null;
   let answered = false;
+  let introSpoken = false;
+  // Transient (not persisted): letters just missed, retested soon so a wrong
+  // answer is followed up on rather than possibly not seen again this session.
+  let retryQueue = [];
 
   function allLetters() {
     return window.NORWEGIAN_LETTERS;
@@ -126,6 +130,7 @@ const JourneyPage = (() => {
         cancelLabel: "↩️ No, keep going",
         onConfirm: () => {
           currentLetter = null;
+          retryQueue = [];
           journey = { unlocked: randomLetters(orderedLetters(), STARTING_LETTERS), scores: {} };
           persist();
           render(container);
@@ -161,7 +166,13 @@ const JourneyPage = (() => {
     feedback.innerHTML = "";
 
     updateStatus(container);
-    speakLetter(currentLetter);
+    if (!introSpoken) {
+      introSpoken = true;
+      window.NorwegianAudio.speak("Trykk på bokstaven du hører.");
+      window.setTimeout(() => speakLetter(currentLetter), 1400);
+    } else {
+      speakLetter(currentLetter);
+    }
   }
 
   function speakLetter(letter) {
@@ -169,8 +180,16 @@ const JourneyPage = (() => {
     window.NorwegianAudio.speak((entry && entry.spokenSound) || letter.toLowerCase());
   }
 
-  /** Prefer new letters, but keep mastered letters in rotation for recall. */
+  /**
+   * Prefer new/unmastered letters, but keep mastered letters in rotation for
+   * recall, and prioritize anything just missed so a wrong answer gets
+   * retested soon rather than possibly not again this session.
+   */
   function pickLetter(unlocked) {
+    retryQueue = retryQueue.filter((letter) => unlocked.includes(letter));
+    if (retryQueue.length > 0 && Math.random() < 0.6) {
+      return retryQueue.shift();
+    }
     const unmastered = unlocked.filter((letter) => !isMastered(letter));
     const practicePool = unmastered.length > 0 && Math.random() < 0.7 ? unmastered : unlocked;
     const candidates = practicePool.length > 0 ? practicePool : unlocked;
@@ -209,7 +228,13 @@ const JourneyPage = (() => {
     if (isCorrect) {
       journey.scores[currentLetter] = Math.min(scoreFor(currentLetter) + 1, CORRECT_TO_MASTER);
     } else {
-      journey.scores[currentLetter] = scoreFor(currentLetter);
+      // A missed letter isn't durably known, even if it was mastered before —
+      // demote it one step so it has to be recalled correctly again rather
+      // than staying "mastered" forever from one earlier streak.
+      journey.scores[currentLetter] = wasMastered
+        ? Math.max(scoreFor(currentLetter) - 1, 0)
+        : scoreFor(currentLetter);
+      if (!retryQueue.includes(currentLetter)) retryQueue.push(currentLetter);
     }
 
     const nowMastered = isMastered(currentLetter);
@@ -240,6 +265,12 @@ const JourneyPage = (() => {
     } else {
       feedback.className = "feedback feedback-incorrect";
       feedback.innerHTML = `Ikke helt — it was <strong>${currentLetter}</strong>${soundHint}.`;
+      if (wasMastered && !nowMastered) {
+        feedback.insertAdjacentHTML(
+          "beforeend",
+          `<div class="journey-unlock">This one needs a bit more practice — we'll come back to it soon.</div>`
+        );
+      }
     }
 
     if (unlockedLetter) {

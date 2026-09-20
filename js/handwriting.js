@@ -17,6 +17,7 @@ const HandwritingPage = (() => {
   let letterIndex = 0;
   let animationFrame = null;
   let animationToken = 0;
+  let introSpoken = false;
 
   function render(container) {
     stopAnimation();
@@ -57,6 +58,11 @@ const HandwritingPage = (() => {
 
     const canvas = container.querySelector("#trace-canvas");
     const context = canvas.getContext("2d");
+
+    if (!introSpoken) {
+      introSpoken = true;
+      window.NorwegianAudio.speak("Se hvordan bokstaven skrives, og øv med blyant på papir.");
+    }
 
     container.querySelector("#hear-letter").addEventListener("click", () => {
       window.NorwegianAudio.speak(entry.spokenSound || entry.letter.toLowerCase());

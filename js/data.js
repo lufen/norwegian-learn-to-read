@@ -147,29 +147,42 @@ const WORD_LEVELS = [
   },
   {
     id: 2,
-    name: "Level 2: Short words",
-    description: "Simple, short Norwegian words made of a few sounds.",
+    name: "Level 2: Simple words",
+    description: "One sound per letter, nothing doubled or joined together.",
+    // Deliberately excludes consonant clusters (hund, fisk) and doubled
+    // letters (katt, ball) — those are a harder decoding skill and belong
+    // in Level 3, so this level is a real, honest step below it.
     words: [
-      { text: "katt", translation: "cat", phonemes: ["k", "ɑ", "t", "t"], syllables: ["k", "a", "tt"], emoji: "🐱" },
-      { text: "hund", translation: "dog", phonemes: ["h", "ʉ", "n", "d"], syllables: ["h", "u", "nd"], emoji: "🐶" },
       { text: "sol", translation: "sun", phonemes: ["s", "u", "l"], syllables: ["s", "o", "l"], emoji: "☀️" },
       { text: "bil", translation: "car", phonemes: ["b", "i", "l"], syllables: ["b", "i", "l"], emoji: "🚗" },
-      { text: "ball", translation: "ball", syllables: ["b", "a", "ll"], emoji: "⚽" },
+      { text: "hus", translation: "house", syllables: ["h", "u", "s"], emoji: "🏠" },
       { text: "mor", translation: "mother", syllables: ["m", "o", "r"], emoji: "👩" },
       { text: "far", translation: "father", syllables: ["f", "a", "r"], emoji: "👨" },
-      { text: "hus", translation: "house", syllables: ["h", "u", "s"], emoji: "🏠" },
-      { text: "fisk", translation: "fish", syllables: ["f", "i", "sk"], emoji: "🐟" },
-      { text: "gul", translation: "yellow", syllables: ["g", "u", "l"], emoji: "🟡" }
+      { text: "is", translation: "ice cream", syllables: ["i", "s"], emoji: "🍦" },
+      { text: "gul", translation: "yellow", syllables: ["g", "u", "l"], emoji: "🟡" },
+      { text: "bok", translation: "book", syllables: ["b", "o", "k"], emoji: "📖" }
     ]
   },
   {
     id: 3,
-    name: "Level 3: Common words",
-    description: "Longer, everyday Norwegian words.",
+    name: "Level 3: Tricky letters",
+    description: "Words with doubled letters or two consonants sitting together.",
+    words: [
+      { text: "katt", translation: "cat", phonemes: ["k", "ɑ", "t", "t"], syllables: ["k", "a", "tt"], emoji: "🐱" },
+      { text: "hund", translation: "dog", phonemes: ["h", "ʉ", "n", "d"], syllables: ["h", "u", "nd"], emoji: "🐶" },
+      { text: "ball", translation: "ball", syllables: ["b", "a", "ll"], emoji: "⚽" },
+      { text: "fisk", translation: "fish", syllables: ["f", "i", "sk"], emoji: "🐟" },
+      { text: "vann", translation: "water", syllables: ["v", "a", "nn"], emoji: "💧" },
+      { text: "brød", translation: "bread", syllables: ["br", "ø", "d"], emoji: "🍞" },
+      { text: "sky", translation: "cloud", syllables: ["sk", "y"], emoji: "☁️" }
+    ]
+  },
+  {
+    id: 4,
+    name: "Level 4: Longer words",
+    description: "Words with two or three syllables.",
     words: [
       { text: "skole", translation: "school", syllables: ["sko", "le"], emoji: "🏫" },
-      { text: "bok", translation: "book", syllables: ["b", "o", "k"], emoji: "📖" },
-      { text: "vann", translation: "water", syllables: ["v", "a", "nn"], emoji: "💧" },
       { text: "epler", translation: "apples", syllables: ["ep", "ler"], emoji: "🍎" },
       { text: "blomst", translation: "flower", syllables: ["bl", "o", "mst"], emoji: "🌸" },
       { text: "sykkel", translation: "bicycle", syllables: ["syk", "kel"], emoji: "🚲" },
@@ -178,8 +191,20 @@ const WORD_LEVELS = [
     ]
   },
   {
-    id: 4,
-    name: "Level 4: Sentences",
+    id: 5,
+    name: "Level 5: Two words together",
+    description: "Short phrases — a bridge between single words and full sentences.",
+    words: [
+      { text: "gul sol", translation: "yellow sun", syllables: ["gul", "sol"], emoji: "🟡☀️" },
+      { text: "liten katt", translation: "small cat", syllables: ["li", "ten", "katt"], emoji: "🤏🐱" },
+      { text: "stor bil", translation: "big car", syllables: ["stor", "bil"], emoji: "📏🚗" },
+      { text: "kald vinter", translation: "cold winter", syllables: ["kald", "vin", "ter"], emoji: "🥶❄️" },
+      { text: "søt hund", translation: "sweet dog", syllables: ["søt", "hund"], emoji: "🥰🐶" }
+    ]
+  },
+  {
+    id: 6,
+    name: "Level 6: Sentences",
     description: "Put words together into simple sentences.",
     words: [
       { text: "katten sover", translation: "the cat is sleeping", syllables: ["katten", "sover"], emoji: "🐱💤" },
@@ -189,6 +214,18 @@ const WORD_LEVELS = [
     ]
   }
 ];
+
+// Tag every word with the distinct letters it's made of (same approach as
+// the decodable books above) so other modules can flag "this uses letters
+// you haven't unlocked in Letter Journey yet" without duplicating logic.
+WORD_LEVELS.forEach((level) => {
+  level.words.forEach((word) => {
+    const letters = new Set();
+    word.text.toUpperCase().replace(/[^A-ZÆØÅ]/g, "").split("").forEach((ch) => letters.add(ch));
+    word.requiredLetters = Array.from(letters).sort();
+  });
+});
+
 
 if (typeof window !== "undefined") {
   window.NORWEGIAN_LETTERS = NORWEGIAN_LETTERS;

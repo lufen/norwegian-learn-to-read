@@ -17,6 +17,8 @@ const WritingPage = (() => {
   let slots = [];
   let bank = [];
   let solved = false;
+  let wrongAttemptsOnSlot = 0;
+  let introSpoken = false;
 
   function render(container) {
     const saved = window.NorwegianProgress.getActivityState("writing");
@@ -61,6 +63,7 @@ const WritingPage = (() => {
     card.className = "word-card";
     card.innerHTML = `
       <div class="word-emoji" aria-hidden="true">${word.emoji || "📝"}</div>
+      ${window.Curriculum ? window.Curriculum.newLetterBadge(word.text) : ""}
       <div class="detail-actions">
         <button type="button" class="btn" id="play-word">🔊 Play word</button>
         <button type="button" class="btn btn-secondary" id="play-slow">🐢 Play slowly</button>
@@ -100,6 +103,11 @@ const WritingPage = (() => {
     });
 
     renderSlotsAndBank(card, word);
+
+    if (!introSpoken) {
+      introSpoken = true;
+      window.NorwegianAudio.speak("Hør ordet, og trykk bokstavene i riktig rekkefølge.");
+    }
   }
 
   function savePosition() {
@@ -112,6 +120,7 @@ const WritingPage = (() => {
   /** Build the empty-slot layout (spaces auto-filled) and a shuffled tile bank. */
   function setupAttempt(word) {
     solved = false;
+    wrongAttemptsOnSlot = 0;
     const chars = word.text.split("");
     slots = chars.map((ch) => (ch === " " ? { char: " ", filled: true, space: true } : { char: ch, filled: false }));
 
@@ -166,6 +175,7 @@ const WritingPage = (() => {
     if (tile.letter === expected) {
       slots[nextSlotIndex].filled = true;
       tile.used = true;
+      wrongAttemptsOnSlot = 0;
       window.NorwegianAudio.speak(tile.letter);
       renderSlotsAndBank(card, word);
       if (slots.every((slot) => slot.filled)) {
@@ -175,8 +185,17 @@ const WritingPage = (() => {
         window.NorwegianProgress.markWordMastered(word.text.trim().toLowerCase());
       }
     } else {
+      wrongAttemptsOnSlot += 1;
       feedback.className = "feedback feedback-incorrect";
-      feedback.textContent = "Not that one — listen again and try another letter.";
+      if (wrongAttemptsOnSlot >= 2) {
+        // Re-teach instead of just saying "wrong" again: say the sound the
+        // child needs next so a stuck attempt doesn't turn into guessing.
+        const entry = (window.NORWEGIAN_LETTERS || []).find((item) => item.letter.toLowerCase() === expected);
+        feedback.textContent = "Listen: that's the sound you need next.";
+        window.NorwegianAudio.speak((entry && entry.spokenSound) || expected);
+      } else {
+        feedback.textContent = "Not that one — listen again and try another letter.";
+      }
     }
   }
 

@@ -4,6 +4,8 @@
  */
 
 const AlphabetPage = (() => {
+  let introSpoken = false;
+
   function render(container) {
     container.innerHTML = "";
 
@@ -11,9 +13,14 @@ const AlphabetPage = (() => {
     heading.className = "page-header";
     heading.innerHTML = `
       <h2>Bokstaver &amp; Lyder — Letters &amp; Sounds</h2>
-      <p>Click a letter to hear how it sounds. Mark it as mastered once you know it well.</p>
+      <p>Click a letter to hear how it sounds. Mark it once you feel you know it well.</p>
     `;
     container.appendChild(heading);
+
+    if (!introSpoken) {
+      introSpoken = true;
+      window.NorwegianAudio.speak("Trykk på en bokstav for å høre lyden.");
+    }
 
     const grid = document.createElement("div");
     grid.className = "letter-grid";
@@ -53,7 +60,7 @@ const AlphabetPage = (() => {
       <div class="detail-actions">
         <button type="button" class="btn" id="replay-letter">🔊 Play sound</button>
         <button type="button" class="btn btn-secondary" id="mark-mastered">
-          ${window.NorwegianProgress.isLetterMastered(entry.letter) ? "✅ Mastered" : "☆ Mark as mastered"}
+          ${window.NorwegianProgress.isLetterMastered(entry.letter) ? "✅ I know it" : "☆ I know this letter"}
         </button>
       </div>
       <h4>Example words</h4>

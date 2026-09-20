@@ -565,6 +565,52 @@ a {
   cursor: default;
 }
 
+.new-letter-badge {
+  display: inline-block;
+  background: #fff4d6;
+  border: 1px solid #e8b93a;
+  border-radius: 999px;
+  padding: 0.15rem 0.6rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+.profile-switch-card {
+  max-width: 400px;
+}
+
+.profile-list {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.6rem;
+  margin: 1rem 0;
+}
+
+.profile-chip {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.3rem;
+  border: 3px solid #dfe4f7;
+  border-radius: var(--radius);
+  background: var(--no-white);
+  padding: 0.6rem 0.9rem;
+  min-width: 4.5rem;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.profile-chip.active {
+  border-color: var(--no-blue);
+  background: #eef2ff;
+}
+
+.profile-chip-avatar {
+  font-size: 1.8rem;
+}
+
 .reading-prompt {
   display: flex;
   align-items: center;

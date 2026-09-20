@@ -168,7 +168,53 @@ know what "Check" means, and can't read color-coded text diffs).
   Home/nav labels and reset dialogs, not every in-activity instruction).
 - Per-child profiles, and session/fatigue-aware pacing.
 
-## 9. Open review
-Reviewed by parallel teacher + student rubber-duck passes; see §8 above
-for what was fixed vs. deferred. Re-review recommended once the
-curriculum map and Letter Journey distractor logic are tackled.
+## 9. Deferred items — built in a follow-up pass
+
+All seven items deferred in §8 have since been implemented:
+
+- **Curriculum map** (`js/curriculum.js`): every word/book is tagged with
+  the distinct letters it uses (already existed for books, now added for
+  `WORD_LEVELS` too). Spell Words and Write Words show a small "🆕" badge
+  when a word uses letters not yet unlocked in Letter Journey. This is
+  advisory, not a hard lock — free exploration is preserved — but the
+  mismatch is now visible instead of silent.
+- **Letter Journey mastery rigor**: a wrong answer on an already-mastered
+  letter now demotes its score by one instead of leaving "mastered"
+  permanent from a single earlier streak, and missed letters go into a
+  short-lived retry queue so they're retested soon rather than possibly
+  not again all session — a real (if still simple) spaced-recall check
+  instead of one streak proving durable knowledge forever.
+- **`WORD_LEVELS` rebalanced**: split into 6 honest steps — Letters →
+  Level 2 Simple words (no clusters/doubles) → Level 3 Tricky letters
+  (clusters/doubled consonants) → Level 4 Longer words (2-3 syllables) →
+  Level 5 Two-word phrases (new bridge step) → Level 6 Sentences.
+  Previously Level 2 already contained clusters and Level 4 jumped
+  straight from single words to full sentences.
+- **Consistent mastery language**: Alphabet's and Spell Words' self-report
+  buttons no longer say "mastered" (now "I know this letter" / "I can read
+  this word"), reserving "mastered" for Letter Journey's tested, repeated-
+  correct-answer result. My Progress now shows three distinct stats:
+  letters mastered *in Letter Journey* (tested), letters/words
+  self-reported as known, matching Little Books' existing honest framing.
+- **App-wide error/re-teaching model**: Write Words now speaks the needed
+  letter's sound as a hint after two wrong taps on the same slot instead
+  of just repeating "wrong"; Little Books' question prompt is now spoken
+  automatically when a new question appears (previously only on manual
+  replay), on top of its existing sound-it-out-on-a-miss behavior.
+- **Spoken instructions per screen**: Alphabet, Letter Journey, Spell
+  Words, Write Letters, Write Words, and My Progress each speak a short
+  one-time instruction the first time they're opened in a session.
+- **Per-child profiles + session pacing**: `js/profiles.js` adds a
+  profile switcher (🦁 button, top right) so siblings sharing a device
+  don't mix up progress; the first/default profile transparently reuses
+  the original storage key so existing progress isn't lost. A gentle,
+  dismissible "time for a break?" reminder appears after 15 minutes of
+  continuous play (not a hard stop, since a good session length varies a
+  lot per child).
+
+## 10. Open review
+Reviewed by parallel teacher + student rubber-duck passes; all identified
+fixes and deferred items are now implemented (see §8-9). Re-review
+recommended once real usage data exists, particularly on whether Letter
+Journey's revised mastery/retry logic and the new phrase level actually
+land well with a 5-year-old in practice.

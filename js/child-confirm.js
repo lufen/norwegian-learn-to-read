@@ -8,7 +8,7 @@
  */
 
 const ChildConfirm = (() => {
-  function show({ message, spokenMessage, confirmLabel, cancelLabel, onConfirm }) {
+  function show({ message, spokenMessage, confirmLabel, cancelLabel, icon, onConfirm, onCancel }) {
     const existing = document.getElementById("child-confirm-overlay");
     if (existing) existing.remove();
 
@@ -19,7 +19,7 @@ const ChildConfirm = (() => {
     overlay.setAttribute("aria-modal", "true");
     overlay.innerHTML = `
       <div class="child-confirm-card">
-        <div class="child-confirm-icon" aria-hidden="true">🗑️</div>
+        <div class="child-confirm-icon" aria-hidden="true">${icon || "🗑️"}</div>
         <p class="child-confirm-message">${message}</p>
         <div class="child-confirm-actions">
           <button type="button" class="btn child-confirm-cancel">↩️ ${cancelLabel || "No, keep it"}</button>
@@ -37,7 +37,10 @@ const ChildConfirm = (() => {
       overlay.remove();
     }
 
-    overlay.querySelector(".child-confirm-cancel").addEventListener("click", close);
+    overlay.querySelector(".child-confirm-cancel").addEventListener("click", () => {
+      close();
+      if (onCancel) onCancel();
+    });
     overlay.querySelector(".child-confirm-confirm").addEventListener("click", () => {
       close();
       onConfirm();

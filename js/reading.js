@@ -68,6 +68,9 @@ const ReadingPage = (() => {
       question = createQuestion(book, page, isLastPage);
       questionNumber += 1;
       helpUsedThisAttempt = false;
+      // Speak the task itself (not the story sentence) so a non-reader
+      // knows what to do without needing the "🔊" replay button first.
+      window.setTimeout(() => window.NorwegianAudio.speak(question.spokenPrompt), 400);
     }
 
     container.innerHTML = `
