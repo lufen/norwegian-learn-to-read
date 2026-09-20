@@ -98,14 +98,14 @@ const WritingPage = (() => {
     const maxLen = Math.max(correct.length, attempt.length);
     let highlighted = "";
     for (let i = 0; i < maxLen; i++) {
-      const expectedChar = correct[i] || "";
+      const expectedChar = escapeHtml(correct[i] || "");
       const typedChar = attempt[i];
       if (typedChar === undefined) {
         highlighted += `<span class="char-missing">${expectedChar}</span>`;
-      } else if (typedChar === expectedChar) {
-        highlighted += `<span class="char-correct">${typedChar}</span>`;
+      } else if (typedChar === correct[i]) {
+        highlighted += `<span class="char-correct">${escapeHtml(typedChar)}</span>`;
       } else {
-        highlighted += `<span class="char-wrong">${typedChar}</span>`;
+        highlighted += `<span class="char-wrong">${escapeHtml(typedChar)}</span>`;
       }
     }
 
@@ -113,8 +113,18 @@ const WritingPage = (() => {
     feedbackEl.innerHTML = `
       <p>Not quite — try again! Here's how your answer compares:</p>
       <p class="char-compare">${highlighted}</p>
-      <p class="correct-answer">Correct spelling: <strong>${correct}</strong></p>
+      <p class="correct-answer">Correct spelling: <strong>${escapeHtml(correct)}</strong></p>
     `;
+  }
+
+  function escapeHtml(str) {
+    return String(str).replace(/[&<>"']/g, (ch) => ({
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      '"': "&quot;",
+      "'": "&#39;"
+    })[ch]);
   }
 
   return { render };

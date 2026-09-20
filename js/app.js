@@ -50,7 +50,8 @@ const App = (() => {
 
   function navigate(pageName) {
     const container = document.getElementById("page-container");
-    const renderer = pages[pageName] || pages.home;
+    const isKnownPage = Object.prototype.hasOwnProperty.call(pages, pageName);
+    const renderer = isKnownPage ? pages[pageName] : pages.home;
     renderer(container);
 
     document.querySelectorAll(".nav-link").forEach((link) => {
@@ -78,7 +79,7 @@ const App = (() => {
     });
 
     const initialPage = (window.location.hash || "#home").replace("#", "") || "home";
-    navigate(pages[initialPage] ? initialPage : "home");
+    navigate(Object.prototype.hasOwnProperty.call(pages, initialPage) ? initialPage : "home");
   }
 
   return { init, navigate };
