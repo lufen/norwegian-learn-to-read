@@ -8,6 +8,13 @@ const WritingPage = (() => {
   let currentWordIndex = 0;
 
   function render(container) {
+    const saved = window.NorwegianProgress.getActivityState("writing");
+    currentLevelIndex = Number.isInteger(saved.levelIndex) ? saved.levelIndex : currentLevelIndex;
+    currentWordIndex = Number.isInteger(saved.wordIndex) ? saved.wordIndex : currentWordIndex;
+    const level = window.WORD_LEVELS[currentLevelIndex] || window.WORD_LEVELS[1];
+    currentLevelIndex = window.WORD_LEVELS.indexOf(level);
+    currentWordIndex = Math.min(currentWordIndex, level.words.length - 1);
+    savePosition();
     container.innerHTML = "";
 
     const heading = document.createElement("div");
@@ -28,13 +35,13 @@ const WritingPage = (() => {
       btn.addEventListener("click", () => {
         currentLevelIndex = idx;
         currentWordIndex = 0;
+        savePosition();
         render(container);
       });
       levelPicker.appendChild(btn);
     });
     container.appendChild(levelPicker);
 
-    const level = window.WORD_LEVELS[currentLevelIndex];
     const word = level.words[currentWordIndex];
 
     const card = document.createElement("div");
@@ -76,11 +83,20 @@ const WritingPage = (() => {
 
     card.querySelector("#prev-word").addEventListener("click", () => {
       currentWordIndex = (currentWordIndex - 1 + level.words.length) % level.words.length;
+      savePosition();
       render(container);
     });
     card.querySelector("#next-word").addEventListener("click", () => {
       currentWordIndex = (currentWordIndex + 1) % level.words.length;
+      savePosition();
       render(container);
+    });
+  }
+
+  function savePosition() {
+    window.NorwegianProgress.saveActivityState("writing", {
+      levelIndex: currentLevelIndex,
+      wordIndex: currentWordIndex
     });
   }
 

@@ -49,7 +49,7 @@ const AlphabetPage = (() => {
 
     const detail = container.querySelector("#letter-detail");
     detail.innerHTML = `
-      <h3>${entry.letter} <span class="sound-hint">(sounds like "${entry.sound}")</span></h3>
+      <h3>${entry.letter} <span class="sound-hint">(${entry.phoneme || entry.sound})</span></h3>
       <div class="detail-actions">
         <button type="button" class="btn" id="replay-letter">🔊 Play sound</button>
         <button type="button" class="btn btn-secondary" id="mark-mastered">

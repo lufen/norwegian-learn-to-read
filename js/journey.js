@@ -1,8 +1,8 @@
 /**
  * Letter Journey — a progression game.
  * The learner starts with just a couple of letters. Every letter needs a few
- * correct answers in a row to be mastered; once every letter currently in play
- * is mastered, the next letter of the journey is unlocked.
+ * correct answers to be mastered; once every letter currently in play is
+ * mastered, two new random letters are unlocked.
  * Progress is stored in localStorage via NorwegianProgress.
  */
 
@@ -15,6 +15,7 @@ const JourneyPage = (() => {
   ];
 
   const STARTING_LETTERS = 2;
+  const UNLOCK_BATCH_SIZE = 2;
   const CORRECT_TO_MASTER = 3;
   const MAX_OPTIONS = 4;
 
@@ -45,9 +46,8 @@ const JourneyPage = (() => {
     const stored = window.NorwegianProgress.getJourney();
     const unlocked = stored.unlocked.filter((letter) => order.includes(letter));
     if (unlocked.length < STARTING_LETTERS) {
-      order.slice(0, STARTING_LETTERS).forEach((letter) => {
-        if (!unlocked.includes(letter)) unlocked.push(letter);
-      });
+      randomLetters(order.filter((letter) => !unlocked.includes(letter)), STARTING_LETTERS - unlocked.length)
+        .forEach((letter) => unlocked.push(letter));
     }
     return { unlocked, scores: stored.scores };
   }
@@ -64,16 +64,15 @@ const JourneyPage = (() => {
     return scoreFor(letter) >= CORRECT_TO_MASTER;
   }
 
-  function nextLockedLetter() {
-    return orderedLetters().find((letter) => !journey.unlocked.includes(letter)) || null;
+  function lockedLetters() {
+    return orderedLetters().filter((letter) => !journey.unlocked.includes(letter));
   }
 
   function unlockIfReady() {
     if (!journey.unlocked.every(isMastered)) return null;
-    const next = nextLockedLetter();
-    if (!next) return null;
-    journey.unlocked.push(next);
-    return next;
+    const next = randomLetters(lockedLetters(), UNLOCK_BATCH_SIZE);
+    journey.unlocked.push(...next);
+    return next.length > 0 ? next : null;
   }
 
   function render(container) {
@@ -122,7 +121,7 @@ const JourneyPage = (() => {
     resetWrap.querySelector("#journey-reset").addEventListener("click", () => {
       if (window.confirm("Start the letter journey over from the first letters?")) {
         currentLetter = null;
-        journey = { unlocked: orderedLetters().slice(0, STARTING_LETTERS), scores: {} };
+        journey = { unlocked: randomLetters(orderedLetters(), STARTING_LETTERS), scores: {} };
         persist();
         render(container);
       }
@@ -159,13 +158,18 @@ const JourneyPage = (() => {
     window.NorwegianAudio.speak(currentLetter.toLowerCase());
   }
 
-  /** Prefer the letters that still need practice. */
+  /** Prefer new letters, but keep mastered letters in rotation for recall. */
   function pickLetter(unlocked) {
     const unmastered = unlocked.filter((letter) => !isMastered(letter));
-    const candidates = unmastered.length > 0 ? unmastered : unlocked;
+    const practicePool = unmastered.length > 0 && Math.random() < 0.7 ? unmastered : unlocked;
+    const candidates = practicePool.length > 0 ? practicePool : unlocked;
     const pool = candidates.length > 1 ? candidates.filter((l) => l !== currentLetter) : candidates;
     const source = pool.length > 0 ? pool : candidates;
     return source[Math.floor(Math.random() * source.length)];
+  }
+
+  function randomLetters(letters, count) {
+    return shuffle(letters).slice(0, Math.min(count, letters.length));
   }
 
   function buildOptions(correctLetter, unlocked) {
@@ -194,7 +198,7 @@ const JourneyPage = (() => {
     if (isCorrect) {
       journey.scores[currentLetter] = Math.min(scoreFor(currentLetter) + 1, CORRECT_TO_MASTER);
     } else {
-      journey.scores[currentLetter] = Math.max(scoreFor(currentLetter) - 1, 0);
+      journey.scores[currentLetter] = scoreFor(currentLetter);
     }
 
     const nowMastered = isMastered(currentLetter);
@@ -230,7 +234,7 @@ const JourneyPage = (() => {
     if (unlockedLetter) {
       feedback.insertAdjacentHTML(
         "beforeend",
-        `<div class="journey-unlock">🔓 New letter unlocked: <strong>${unlockedLetter}</strong>!</div>`
+        `<div class="journey-unlock">🔓 New letters unlocked: <strong>${unlockedLetter.join(", ")}</strong>!</div>`
       );
     }
 
@@ -262,11 +266,11 @@ const JourneyPage = (() => {
       pool.appendChild(chip);
     });
 
-    const next = nextLockedLetter();
-    if (next) {
+    const remaining = lockedLetters();
+    if (remaining.length > 0) {
       const locked = document.createElement("div");
       locked.className = "journey-chip locked";
-      locked.innerHTML = `<span class="journey-chip-letter">🔒</span><span class="journey-chip-score">next</span>`;
+      locked.innerHTML = `<span class="journey-chip-letter">🔒</span><span class="journey-chip-score">${Math.min(UNLOCK_BATCH_SIZE, remaining.length)} next</span>`;
       pool.appendChild(locked);
     }
   }

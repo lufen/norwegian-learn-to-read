@@ -9,6 +9,8 @@ A frontend-only, static web app that helps beginners learn to read and write Nor
 - **Letter Journey** — a progression game: you start with just two letters, each letter must be answered correctly a few times to be mastered, and a new letter unlocks once every letter in play is mastered.
 - **Spell Words** — words are broken into phonemes/syllables that can be played individually and then blended into the full word.
 - **Write Words** — dictation exercise: listen to a word and type it; the app checks your spelling and highlights matches/mismatches.
+- **Little Books** — a gradual path from first-word matching to tiny sentences and short decodable stories, with randomized comprehension questions that can be practised repeatedly.
+- **Write Letters** — touch and mouse tracing practice for letter formation.
 - **My Progress** — tracks mastered letters and words locally (no login required).
 
 ## Running locally
@@ -36,6 +38,8 @@ js/settings.js        Text size, dyslexia-friendly font, audio speed (persisted)
 js/progress.js         Mastered letters/words tracking (localStorage)
 js/alphabet.js         Letters & Sounds module
 js/journey.js          Letter Journey progression game
+js/reading.js          Decodable mini-books and comprehension
+js/handwriting.js      Letter tracing with touch/mouse input
 js/spelling.js         Spell Words module
 js/writing.js          Write Words (dictation) module
 js/progress-page.js    My Progress summary page

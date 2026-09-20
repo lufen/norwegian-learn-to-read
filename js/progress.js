@@ -7,7 +7,7 @@ const NorwegianProgress = (() => {
   const STORAGE_KEY = "nlr_progress";
 
   function emptyState() {
-    return { letters: {}, words: {}, journey: { unlocked: [], scores: {} } };
+    return { letters: {}, words: {}, journey: { unlocked: [], scores: {} }, activities: {} };
   }
 
   function withDefaults(parsed) {
@@ -21,7 +21,10 @@ const NorwegianProgress = (() => {
           ? parsed.journey.unlocked
           : base.journey.unlocked,
         scores: (parsed.journey && parsed.journey.scores) || base.journey.scores
-      }
+      },
+      activities: parsed.activities && typeof parsed.activities === "object"
+        ? parsed.activities
+        : base.activities
     };
   }
 
@@ -54,6 +57,11 @@ const NorwegianProgress = (() => {
     return !!state.letters[letter];
   }
 
+  function isLetterAvailable(letter) {
+    const available = Object.keys(state.letters);
+    return available.length < 2 || available.includes(letter) || ["S", "O"].includes(letter);
+  }
+
   function markWordMastered(word) {
     state.words[word] = true;
     save(state);
@@ -82,6 +90,16 @@ const NorwegianProgress = (() => {
     save(state);
   }
 
+  function getActivityState(activity) {
+    const value = state.activities[activity];
+    return value && typeof value === "object" ? Object.assign({}, value) : {};
+  }
+
+  function saveActivityState(activity, activityState) {
+    state.activities[activity] = Object.assign({}, activityState);
+    save(state);
+  }
+
   function reset() {
     state = emptyState();
     save(state);
@@ -90,11 +108,14 @@ const NorwegianProgress = (() => {
   return {
     markLetterMastered,
     isLetterMastered,
+    isLetterAvailable,
     markWordMastered,
     isWordMastered,
     getSummary,
     getJourney,
     saveJourney,
+    getActivityState,
+    saveActivityState,
     reset
   };
 })();

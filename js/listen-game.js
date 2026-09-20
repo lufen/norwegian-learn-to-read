@@ -13,9 +13,10 @@ const ListenGamePage = (() => {
   let answered = false;
 
   function render(container) {
+    const saved = window.NorwegianProgress.getActivityState("listen-game");
     container.innerHTML = "";
-    score = 0;
-    attempts = 0;
+    score = Number.isInteger(saved.score) ? saved.score : 0;
+    attempts = Number.isInteger(saved.attempts) ? saved.attempts : 0;
 
     const heading = document.createElement("div");
     heading.className = "page-header";
@@ -54,14 +55,25 @@ const ListenGamePage = (() => {
     });
 
     updateScoreboard(container);
-    startRound(container);
+    const savedEntry = window.NORWEGIAN_LETTERS.find((entry) => entry.letter === saved.currentLetter);
+    if (savedEntry) {
+      currentEntry = savedEntry;
+      currentOptions = buildOptions(currentEntry);
+      renderRound(container);
+    } else {
+      startRound(container);
+    }
   }
 
   function startRound(container) {
     answered = false;
     currentEntry = pickRandomEntry();
     currentOptions = buildOptions(currentEntry);
+    saveState();
+    renderRound(container);
+  }
 
+  function renderRound(container) {
     const optionsContainer = container.querySelector("#listen-game-options");
     optionsContainer.innerHTML = "";
     currentOptions.forEach((entry) => {
@@ -88,14 +100,18 @@ const ListenGamePage = (() => {
   }
 
   function pickRandomEntry() {
-    const letters = window.NORWEGIAN_LETTERS;
+    const letters = window.NORWEGIAN_LETTERS.filter((entry) =>
+      window.NorwegianProgress.isLetterAvailable(entry.letter)
+    );
     const pool = currentEntry ? excludeLetter(letters, currentEntry.letter) : letters;
     const candidates = pool.length > 0 ? pool : letters;
     return candidates[Math.floor(Math.random() * candidates.length)];
   }
 
   function buildOptions(correctEntry) {
-    const letters = window.NORWEGIAN_LETTERS;
+    const letters = window.NORWEGIAN_LETTERS.filter((entry) =>
+      window.NorwegianProgress.isLetterAvailable(entry.letter)
+    );
     const pool = excludeLetter(letters, correctEntry.letter);
     shuffle(pool);
     const distractors = pool.slice(0, Math.min(OPTION_COUNT - 1, pool.length));
@@ -141,6 +157,7 @@ const ListenGamePage = (() => {
       feedback.innerHTML = `Ikke helt — not quite. It was <strong>${currentEntry.letter}</strong> (sounds like "${currentEntry.sound}").`;
     }
 
+    saveState();
     updateScoreboard(container);
   }
 
@@ -149,6 +166,14 @@ const ListenGamePage = (() => {
     if (scoreboard) {
       scoreboard.textContent = `Score: ${score} / ${attempts}`;
     }
+  }
+
+  function saveState() {
+    window.NorwegianProgress.saveActivityState("listen-game", {
+      currentLetter: currentEntry ? currentEntry.letter : null,
+      score,
+      attempts
+    });
   }
 
   return { render };

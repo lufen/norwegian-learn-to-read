@@ -8,6 +8,13 @@ const SpellingPage = (() => {
   let currentWordIndex = 0;
 
   function render(container) {
+    const saved = window.NorwegianProgress.getActivityState("spelling");
+    currentLevelIndex = Number.isInteger(saved.levelIndex) ? saved.levelIndex : currentLevelIndex;
+    currentWordIndex = Number.isInteger(saved.wordIndex) ? saved.wordIndex : currentWordIndex;
+    const level = window.WORD_LEVELS[currentLevelIndex] || window.WORD_LEVELS[1];
+    currentLevelIndex = window.WORD_LEVELS.indexOf(level);
+    currentWordIndex = Math.min(currentWordIndex, level.words.length - 1);
+    savePosition();
     container.innerHTML = "";
 
     const heading = document.createElement("div");
@@ -28,13 +35,13 @@ const SpellingPage = (() => {
       btn.addEventListener("click", () => {
         currentLevelIndex = idx;
         currentWordIndex = 0;
+        savePosition();
         render(container);
       });
       levelPicker.appendChild(btn);
     });
     container.appendChild(levelPicker);
 
-    const level = window.WORD_LEVELS[currentLevelIndex];
     const word = level.words[currentWordIndex];
 
     const card = document.createElement("div");
@@ -57,12 +64,18 @@ const SpellingPage = (() => {
     container.appendChild(card);
 
     const syllablesContainer = card.querySelector("#word-syllables");
-    word.syllables.forEach((part) => {
+    const displayParts = word.text.includes(" ")
+      ? word.syllables
+      : Array.from(word.text);
+    const soundParts = word.phonemes || displayParts;
+    displayParts.forEach((part, index) => {
       const chip = document.createElement("button");
       chip.type = "button";
       chip.className = "syllable-chip";
       chip.textContent = part;
-      chip.addEventListener("click", () => window.NorwegianAudio.speak(part));
+      const sound = soundParts[index] || part;
+      chip.setAttribute("aria-label", `Letter ${part}. Sound ${sound}`);
+      chip.addEventListener("click", () => window.NorwegianAudio.speak(sound));
       syllablesContainer.appendChild(chip);
     });
 
@@ -75,11 +88,20 @@ const SpellingPage = (() => {
     });
     card.querySelector("#prev-word").addEventListener("click", () => {
       currentWordIndex = (currentWordIndex - 1 + level.words.length) % level.words.length;
+      savePosition();
       render(container);
     });
     card.querySelector("#next-word").addEventListener("click", () => {
       currentWordIndex = (currentWordIndex + 1) % level.words.length;
+      savePosition();
       render(container);
+    });
+  }
+
+  function savePosition() {
+    window.NorwegianProgress.saveActivityState("spelling", {
+      levelIndex: currentLevelIndex,
+      wordIndex: currentWordIndex
     });
   }
 

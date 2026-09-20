@@ -4,35 +4,278 @@
  */
 
 const NORWEGIAN_LETTERS = [
-  { letter: "A", sound: "ah", examples: ["and (duck)", "app (monkey)", "arm (arm)"] },
-  { letter: "B", sound: "beh", examples: ["bil (car)", "bok (book)", "ball (ball)"] },
-  { letter: "C", sound: "seh", examples: ["cirkus (circus)", "citron (lemon, dialect)"] },
-  { letter: "D", sound: "deh", examples: ["dag (day)", "due (pigeon)", "dukke (doll)"] },
-  { letter: "E", sound: "eh", examples: ["esel (donkey)", "eple (apple)", "elg (moose)"] },
-  { letter: "F", sound: "eff", examples: ["fisk (fish)", "far (father)", "fugl (bird)"] },
-  { letter: "G", sound: "geh", examples: ["gris (pig)", "gul (yellow)", "geit (goat)"] },
-  { letter: "H", sound: "hoh", examples: ["hund (dog)", "hus (house)", "hest (horse)"] },
-  { letter: "I", sound: "ee", examples: ["is (ice cream)", "igle (leech)"] },
-  { letter: "J", sound: "yeh", examples: ["jul (christmas)", "jente (girl)"] },
-  { letter: "K", sound: "koh", examples: ["katt (cat)", "ku (cow)", "kake (cake)"] },
-  { letter: "L", sound: "ell", examples: ["løve (lion)", "lys (light)"] },
-  { letter: "M", sound: "emm", examples: ["mor (mother)", "mus (mouse)", "melk (milk)"] },
-  { letter: "N", sound: "enn", examples: ["natt (night)", "null (zero)"] },
-  { letter: "O", sound: "oh", examples: ["ost (cheese)", "okse (ox)"] },
-  { letter: "P", sound: "peh", examples: ["pike (girl)", "penn (pen)"] },
-  { letter: "Q", sound: "koo", examples: ["quiz (quiz)"] },
-  { letter: "R", sound: "err", examples: ["rev (fox)", "regn (rain)"] },
-  { letter: "S", sound: "ess", examples: ["sol (sun)", "sko (shoe)"] },
-  { letter: "T", sound: "teh", examples: ["tog (train)", "tre (tree)"] },
-  { letter: "U", sound: "oo", examples: ["ugle (owl)", "ull (wool)"] },
-  { letter: "V", sound: "veh", examples: ["vann (water)", "vinter (winter)"] },
-  { letter: "W", sound: "dobbeltveh", examples: ["wc (toilet, loanword)"] },
-  { letter: "X", sound: "eks", examples: ["xylofon (xylophone)"] },
-  { letter: "Y", sound: "y", examples: ["ymse (miscellaneous)"] },
-  { letter: "Z", sound: "sett", examples: ["zoo (zoo)"] },
-  { letter: "Æ", sound: "æh", examples: ["ære (honor)", "sæd (seed, dialect)"] },
-  { letter: "Ø", sound: "øh", examples: ["øy (island)", "ørn (eagle)"] },
-  { letter: "Å", sound: "oh (rounded)", examples: ["år (year)", "ål (eel)"] }
+  { letter: "A", sound: "a", phoneme: "ɑ", examples: ["and (duck)", "app (monkey)", "arm (arm)"] },
+  { letter: "B", sound: "b", phoneme: "b", examples: ["bil (car)", "bok (book)", "ball (ball)"] },
+  { letter: "C", sound: "c", phoneme: "s", examples: ["cirkus (circus)", "citron (lemon, dialect)"] },
+  { letter: "D", sound: "d", phoneme: "d", examples: ["dag (day)", "due (pigeon)", "dukke (doll)"] },
+  { letter: "E", sound: "e", phoneme: "e", examples: ["esel (donkey)", "eple (apple)", "elg (moose)"] },
+  { letter: "F", sound: "f", phoneme: "f", examples: ["fisk (fish)", "far (father)", "fugl (bird)"] },
+  { letter: "G", sound: "g", phoneme: "g", examples: ["gris (pig)", "gul (yellow)", "geit (goat)"] },
+  { letter: "H", sound: "h", phoneme: "h", examples: ["hund (dog)", "hus (house)", "hest (horse)"] },
+  { letter: "I", sound: "i", phoneme: "i", examples: ["is (ice cream)", "igle (leech)"] },
+  { letter: "J", sound: "j", phoneme: "j", examples: ["jul (christmas)", "jente (girl)"] },
+  { letter: "K", sound: "k", phoneme: "k", examples: ["katt (cat)", "ku (cow)", "kake (cake)"] },
+  { letter: "L", sound: "l", phoneme: "l", examples: ["løve (lion)", "lys (light)"] },
+  { letter: "M", sound: "m", phoneme: "m", examples: ["mor (mother)", "mus (mouse)", "melk (milk)"] },
+  { letter: "N", sound: "n", phoneme: "n", examples: ["natt (night)", "null (zero)"] },
+  { letter: "O", sound: "o", phoneme: "u", examples: ["ost (cheese)", "okse (ox)"] },
+  { letter: "P", sound: "p", phoneme: "p", examples: ["pike (girl)", "penn (pen)"] },
+  { letter: "Q", sound: "q", phoneme: "k", examples: ["quiz (quiz)"] },
+  { letter: "R", sound: "r", phoneme: "r", examples: ["rev (fox)", "regn (rain)"] },
+  { letter: "S", sound: "s", phoneme: "s", examples: ["sol (sun)", "sko (shoe)"] },
+  { letter: "T", sound: "t", phoneme: "t", examples: ["tog (train)", "tre (tree)"] },
+  { letter: "U", sound: "u", phoneme: "ʉ", examples: ["ugle (owl)", "ull (wool)"] },
+  { letter: "V", sound: "v", phoneme: "v", examples: ["vann (water)", "vinter (winter)"] },
+  { letter: "W", sound: "w", phoneme: "v", examples: ["wc (toilet, loanword)"] },
+  { letter: "X", sound: "x", phoneme: "ks", examples: ["xylofon (xylophone)"] },
+  { letter: "Y", sound: "y", phoneme: "y", examples: ["ymse (miscellaneous)"] },
+  { letter: "Z", sound: "z", phoneme: "s", examples: ["zoo (zoo)"] },
+  { letter: "Æ", sound: "æ", phoneme: "æ", examples: ["ære (honor)", "sæd (seed, dialect)"] },
+  { letter: "Ø", sound: "ø", phoneme: "ø", examples: ["øy (island)", "ørn (eagle)"] },
+  { letter: "Å", sound: "å", phoneme: "oː", examples: ["år (year)", "ål (eel)"] }
+];
+
+const DECODABLE_BOOKS = [
+  {
+    id: "first-words",
+    title: "First words",
+    level: "Start here",
+    requiredLetters: ["S", "O", "L", "M", "I", "B", "K", "A", "T"],
+    pages: [
+      {
+        text: "sol",
+        picture: "☀️",
+        questions: [
+          { prompt: "Finn ordet sol.", choices: ["sol", "bil", "katt"], answer: "sol" },
+          { prompt: "Finn solen.", choices: ["☀️", "🚗", "🐱"], answer: "☀️" }
+        ]
+      },
+      {
+        text: "katt",
+        picture: "🐱",
+        questions: [
+          { prompt: "Finn ordet katt.", choices: ["sol", "katt", "mus"], answer: "katt" },
+          { prompt: "Finn katten.", choices: ["☀️", "🐱", "🚗"], answer: "🐱" }
+        ]
+      },
+      {
+        text: "bil",
+        picture: "🚗",
+        questions: [
+          { prompt: "Finn ordet bil.", choices: ["bil", "is", "sol"], answer: "bil" },
+          { prompt: "Finn bilen.", choices: ["🐱", "🚗", "☀️"], answer: "🚗" }
+        ]
+      },
+      {
+        text: "is",
+        picture: "🍦",
+        questions: [
+          { prompt: "Finn ordet is.", choices: ["is", "mus", "bil"], answer: "is" },
+          { prompt: "Finn isen.", choices: ["🍦", "🐭", "☀️"], answer: "🍦" }
+        ]
+      }
+    ]
+  },
+  {
+    id: "tiny-sentences",
+    title: "Tiny sentences",
+    level: "Next step",
+    requiredLetters: ["S", "O", "L", "M", "I", "B", "K", "A", "T", "E", "R"],
+    pages: [
+      {
+        text: "Se sol.",
+        picture: "👀☀️",
+        questions: [
+          { prompt: "Finn ordet sol.", choices: ["se", "sol", "bil"], answer: "sol" },
+          { prompt: "Hva ser du?", choices: ["sol", "katt", "is"], answer: "sol" }
+        ]
+      },
+      {
+        text: "Se katt.",
+        picture: "👀🐱",
+        questions: [
+          { prompt: "Finn ordet katt.", choices: ["sol", "katt", "bil"], answer: "katt" },
+          { prompt: "Hva ser du?", choices: ["bil", "is", "katt"], answer: "katt" }
+        ]
+      },
+      {
+        text: "Se bil.",
+        picture: "👀🚗",
+        questions: [
+          { prompt: "Finn ordet bil.", choices: ["bil", "sol", "katt"], answer: "bil" },
+          { prompt: "Hva ser du?", choices: ["is", "bil", "mus"], answer: "bil" }
+        ]
+      },
+      {
+        text: "Sol er gul.",
+        picture: "☀️🟡",
+        questions: [
+          { prompt: "Finn fargen gul.", choices: ["gul", "blå", "rød"], answer: "gul" },
+          { prompt: "Hva er gul?", choices: ["sol", "bil", "katt"], answer: "sol" }
+        ]
+      }
+    ]
+  },
+  {
+    id: "sol",
+    title: "Sol",
+    level: "Story practice",
+    requiredLetters: ["S", "O", "L"],
+    pages: [
+      {
+        text: "Sol.",
+        picture: "☀️",
+        questions: [
+          { prompt: "Finn solen.", choices: ["☀️", "🐱", "🚗"], answer: "☀️" },
+          { prompt: "Hva ser du?", choices: ["sol", "katt", "bil"], answer: "sol" }
+        ]
+      },
+      {
+        text: "Sol er gul.",
+        picture: "🟡",
+        questions: [
+          { prompt: "Hvilken farge er sol?", choices: ["blå", "gul", "rød"], answer: "gul" },
+          { prompt: "Hvilket ord betyr yellow?", choices: ["gul", "sol", "bil"], answer: "gul" }
+        ]
+      },
+      {
+        text: "Sol lyser.",
+        picture: "☀️✨",
+        questions: [
+          { prompt: "Hva gjør solen?", choices: ["lyser", "sover", "løper"], answer: "lyser" },
+          { prompt: "Finn lyset.", choices: ["✨", "💧", "🌙"], answer: "✨" }
+        ]
+      },
+      {
+        text: "Se sol.",
+        picture: "👀☀️",
+        questions: [
+          { prompt: "Hva skal du se?", choices: ["sol", "katt", "hus"], answer: "sol" },
+          { prompt: "Hvilket ord starter med s?", choices: ["sol", "bil", "og"], answer: "sol" }
+        ]
+      }
+    ]
+  },
+  {
+    id: "katt",
+    title: "Katt",
+    level: "Story practice",
+    requiredLetters: ["K", "A", "T", "S", "O"],
+    pages: [
+      {
+        text: "Katt.",
+        picture: "🐱",
+        questions: [
+          { prompt: "Finn katten.", choices: ["🐶", "🐱", "🐟"], answer: "🐱" },
+          { prompt: "Hva ser du?", choices: ["katt", "sol", "bil"], answer: "katt" }
+        ]
+      },
+      {
+        text: "Katt sover.",
+        picture: "🐱💤",
+        questions: [
+          { prompt: "Hva gjør katten?", choices: ["sover", "løper", "spiser"], answer: "sover" },
+          { prompt: "Finn det som viser søvn.", choices: ["💤", "☀️", "🚗"], answer: "💤" }
+        ]
+      },
+      {
+        text: "Katt ser sol.",
+        picture: "🐱👀☀️",
+        questions: [
+          { prompt: "Hva ser katten?", choices: ["sol", "mus", "hus"], answer: "sol" },
+          { prompt: "Hvem ser?", choices: ["katt", "sol", "bil"], answer: "katt" }
+        ]
+      },
+      {
+        text: "Katt løper.",
+        picture: "🐱💨",
+        questions: [
+          { prompt: "Hva gjør katten nå?", choices: ["løper", "sover", "sitter"], answer: "løper" },
+          { prompt: "Finn fart.", choices: ["💨", "💤", "💧"], answer: "💨" }
+        ]
+      }
+    ]
+  },
+  {
+    id: "bil",
+    title: "Bil",
+    level: "Story practice",
+    requiredLetters: ["B", "I", "L", "S", "O"],
+    pages: [
+      {
+        text: "Bil.",
+        picture: "🚗",
+        questions: [
+          { prompt: "Finn bilen.", choices: ["🚗", "🐱", "☀️"], answer: "🚗" },
+          { prompt: "Hva ser du?", choices: ["bil", "sol", "katt"], answer: "bil" }
+        ]
+      },
+      {
+        text: "Bil er blå.",
+        picture: "🚙🔵",
+        questions: [
+          { prompt: "Hvilken farge er bilen?", choices: ["blå", "gul", "rød"], answer: "blå" },
+          { prompt: "Hvilket ord betyr blue?", choices: ["blå", "bil", "sol"], answer: "blå" }
+        ]
+      },
+      {
+        text: "Bil kjører.",
+        picture: "🚗💨",
+        questions: [
+          { prompt: "Hva gjør bilen?", choices: ["kjører", "sover", "spiser"], answer: "kjører" },
+          { prompt: "Finn bilen som kjører.", choices: ["🚗💨", "🐱💤", "☀️"], answer: "🚗💨" }
+        ]
+      },
+      {
+        text: "Se bil.",
+        picture: "👀🚗",
+        questions: [
+          { prompt: "Hva skal du se?", choices: ["bil", "katt", "sol"], answer: "bil" },
+          { prompt: "Hvilket ord starter med b?", choices: ["bil", "sol", "is"], answer: "bil" }
+        ]
+      }
+    ]
+  },
+  {
+    id: "mus",
+    title: "Mus",
+    level: "Story practice",
+    requiredLetters: ["M", "U", "S", "O", "L"],
+    pages: [
+      {
+        text: "Mus.",
+        picture: "🐭",
+        questions: [
+          { prompt: "Finn musen.", choices: ["🐭", "🐶", "🐟"], answer: "🐭" },
+          { prompt: "Hva ser du?", choices: ["mus", "sol", "bil"], answer: "mus" }
+        ]
+      },
+      {
+        text: "Mus ser sol.",
+        picture: "🐭👀☀️",
+        questions: [
+          { prompt: "Hva ser musen?", choices: ["sol", "katt", "hus"], answer: "sol" },
+          { prompt: "Hvem ser?", choices: ["mus", "sol", "bil"], answer: "mus" }
+        ]
+      },
+      {
+        text: "Mus løper.",
+        picture: "🐭💨",
+        questions: [
+          { prompt: "Hva gjør musen?", choices: ["løper", "sover", "sitter"], answer: "løper" },
+          { prompt: "Finn fart.", choices: ["💨", "💤", "☀️"], answer: "💨" }
+        ]
+      },
+      {
+        text: "Mus er liten.",
+        picture: "🐭🤏",
+        questions: [
+          { prompt: "Hvordan er musen?", choices: ["liten", "stor", "gul"], answer: "liten" },
+          { prompt: "Finn musen.", choices: ["🐭", "🐘", "🚗"], answer: "🐭" }
+        ]
+      }
+    ]
+  }
 ];
 
 const WORD_LEVELS = [
@@ -43,6 +286,7 @@ const WORD_LEVELS = [
     words: NORWEGIAN_LETTERS.map((l) => ({
       text: l.letter.toLowerCase(),
       translation: l.examples[0] || "",
+      phonemes: [l.phoneme],
       syllables: [l.letter.toLowerCase()],
       emoji: "🔤"
     }))
@@ -52,10 +296,10 @@ const WORD_LEVELS = [
     name: "Level 2: Short words",
     description: "Simple, short Norwegian words made of a few sounds.",
     words: [
-      { text: "katt", translation: "cat", syllables: ["k", "a", "tt"], emoji: "🐱" },
-      { text: "hund", translation: "dog", syllables: ["h", "u", "nd"], emoji: "🐶" },
-      { text: "sol", translation: "sun", syllables: ["s", "o", "l"], emoji: "☀️" },
-      { text: "bil", translation: "car", syllables: ["b", "i", "l"], emoji: "🚗" },
+      { text: "katt", translation: "cat", phonemes: ["k", "ɑ", "t", "t"], syllables: ["k", "a", "tt"], emoji: "🐱" },
+      { text: "hund", translation: "dog", phonemes: ["h", "ʉ", "n", "d"], syllables: ["h", "u", "nd"], emoji: "🐶" },
+      { text: "sol", translation: "sun", phonemes: ["s", "u", "l"], syllables: ["s", "o", "l"], emoji: "☀️" },
+      { text: "bil", translation: "car", phonemes: ["b", "i", "l"], syllables: ["b", "i", "l"], emoji: "🚗" },
       { text: "ball", translation: "ball", syllables: ["b", "a", "ll"], emoji: "⚽" },
       { text: "mor", translation: "mother", syllables: ["m", "o", "r"], emoji: "👩" },
       { text: "far", translation: "father", syllables: ["f", "a", "r"], emoji: "👨" },
@@ -95,4 +339,5 @@ const WORD_LEVELS = [
 if (typeof window !== "undefined") {
   window.NORWEGIAN_LETTERS = NORWEGIAN_LETTERS;
   window.WORD_LEVELS = WORD_LEVELS;
+  window.DECODABLE_BOOKS = DECODABLE_BOOKS;
 }
