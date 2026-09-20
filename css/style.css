@@ -1,0 +1,425 @@
+/* Norwegian Learn to Read & Write — styles
+   Colors based on the Norwegian flag: red, white, blue. */
+
+:root {
+  --no-red: #ef2b2d;
+  --no-blue: #002868;
+  --no-white: #ffffff;
+  --bg: #f7f8fc;
+  --text: #1b1b2f;
+  --radius: 14px;
+  --font-base: "Segoe UI", Verdana, Arial, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-base);
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+}
+
+body.dyslexia-font,
+body.dyslexia-font * {
+  font-family: "Comic Sans MS", "OpenDyslexic", var(--font-base);
+  letter-spacing: 0.02em;
+}
+
+body.text-normal { font-size: 16px; }
+body.text-large { font-size: 20px; }
+body.text-xlarge { font-size: 26px; }
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+/* Header */
+.app-header {
+  background: var(--no-blue);
+  color: var(--no-white);
+  padding: 0.75rem 1rem;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.app-title {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.flag-stripe {
+  width: 12px;
+  height: 32px;
+  background: var(--no-red);
+  border: 3px solid var(--no-white);
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+
+.app-title h1 {
+  font-size: 1.4rem;
+  margin: 0;
+}
+
+.main-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.nav-link {
+  padding: 0.5rem 0.9rem;
+  border-radius: 999px;
+  font-weight: 600;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.nav-link.active,
+.nav-link:hover {
+  background: var(--no-red);
+}
+
+/* Settings */
+.settings-container {
+  display: none;
+  background: var(--no-white);
+  border-bottom: 3px solid var(--no-blue);
+  padding: 1rem;
+}
+
+.settings-container.open {
+  display: block;
+}
+
+.settings-panel {
+  max-width: 480px;
+  margin: 0 auto;
+}
+
+.settings-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.4rem 0;
+}
+
+/* Page container */
+.page-container {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 1.5rem 1rem 3rem;
+}
+
+.page-header h2 {
+  margin-bottom: 0.25rem;
+}
+
+.home-header {
+  text-align: center;
+}
+
+/* Home tiles */
+.home-menu {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+.home-tile {
+  background: var(--no-white);
+  border: 3px solid var(--no-blue);
+  border-radius: var(--radius);
+  padding: 1.5rem 1rem;
+  font-size: 1.1rem;
+  font-weight: 700;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.6rem;
+  cursor: pointer;
+  transition: transform 0.15s ease, background 0.15s ease;
+  color: var(--no-blue);
+}
+
+.home-tile:hover,
+.home-tile:focus-visible {
+  transform: translateY(-3px);
+  background: #eef2ff;
+}
+
+.home-tile-icon {
+  font-size: 2.2rem;
+}
+
+/* Buttons */
+.btn {
+  border: none;
+  border-radius: 999px;
+  padding: 0.6rem 1.2rem;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  background: var(--no-blue);
+  color: var(--no-white);
+}
+
+.btn:hover,
+.btn:focus-visible {
+  background: var(--no-red);
+}
+
+.btn-secondary {
+  background: #dfe4f7;
+  color: var(--no-blue);
+}
+
+.btn-outline {
+  background: transparent;
+  border: 2px solid var(--no-blue);
+  color: var(--no-blue);
+}
+
+.btn-level {
+  background: #dfe4f7;
+  color: var(--no-blue);
+  font-size: 0.9rem;
+  padding: 0.45rem 0.9rem;
+}
+
+.btn-level.active {
+  background: var(--no-blue);
+  color: var(--no-white);
+}
+
+.btn-icon {
+  background: transparent;
+  font-size: 1.3rem;
+  padding: 0.3rem 0.6rem;
+}
+
+.detail-actions,
+.nav-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin: 1rem 0;
+}
+
+.level-picker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 1rem 0;
+}
+
+/* Alphabet grid */
+.letter-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(64px, 1fr));
+  gap: 0.6rem;
+  margin: 1.5rem 0;
+}
+
+.letter-tile {
+  aspect-ratio: 1 / 1;
+  border: 3px solid var(--no-blue);
+  border-radius: var(--radius);
+  background: var(--no-white);
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: var(--no-blue);
+  cursor: pointer;
+  transition: transform 0.1s ease, background 0.15s ease;
+}
+
+.letter-tile:hover,
+.letter-tile:focus-visible {
+  transform: scale(1.05);
+  background: #eef2ff;
+}
+
+.letter-tile.mastered {
+  background: #d3f3d8;
+  border-color: #2e8b46;
+  color: #2e8b46;
+}
+
+.letter-detail {
+  background: var(--no-white);
+  border-radius: var(--radius);
+  padding: 1.25rem;
+  border: 2px solid #dfe4f7;
+}
+
+.sound-hint {
+  font-weight: 400;
+  font-size: 0.9rem;
+  color: #555;
+}
+
+.example-list {
+  padding-left: 1.2rem;
+}
+
+/* Word cards */
+.word-card {
+  background: var(--no-white);
+  border-radius: var(--radius);
+  padding: 1.5rem;
+  text-align: center;
+  border: 2px solid #dfe4f7;
+}
+
+.word-emoji {
+  font-size: 3rem;
+  margin-bottom: 0.5rem;
+}
+
+.word-syllables {
+  display: flex;
+  justify-content: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.75rem;
+}
+
+.syllable-chip {
+  border: 2px solid var(--no-red);
+  color: var(--no-red);
+  background: #fff0f0;
+  border-radius: 10px;
+  padding: 0.5rem 0.9rem;
+  font-size: 1.4rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.syllable-chip:hover,
+.syllable-chip:focus-visible {
+  background: var(--no-red);
+  color: var(--no-white);
+}
+
+.word-translation {
+  color: #555;
+  font-style: italic;
+}
+
+/* Dictation */
+.dictation-input {
+  font-size: 1.2rem;
+  padding: 0.6rem 0.8rem;
+  border-radius: 10px;
+  border: 2px solid var(--no-blue);
+  width: 100%;
+  max-width: 320px;
+  margin: 0.5rem 0;
+}
+
+#dictation-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  justify-content: center;
+  align-items: center;
+}
+
+.feedback {
+  margin-top: 1rem;
+  padding: 1rem;
+  border-radius: 10px;
+}
+
+.feedback-correct {
+  background: #d3f3d8;
+  color: #2e8b46;
+}
+
+.feedback-incorrect {
+  background: #ffe6e6;
+  color: #a3282a;
+}
+
+.char-compare {
+  font-size: 1.5rem;
+  font-family: monospace;
+  letter-spacing: 0.1em;
+}
+
+.char-correct { color: #2e8b46; }
+.char-wrong { color: #a3282a; text-decoration: underline; }
+.char-missing { color: #a3282a; opacity: 0.5; }
+
+/* Progress page */
+.progress-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1rem;
+  margin: 1.5rem 0;
+}
+
+.progress-card {
+  background: var(--no-white);
+  border-radius: var(--radius);
+  padding: 1.25rem;
+  border: 2px solid #dfe4f7;
+  text-align: center;
+}
+
+.progress-number {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--no-blue);
+}
+
+.progress-bar {
+  background: #e2e6f5;
+  border-radius: 999px;
+  height: 10px;
+  margin-top: 0.75rem;
+  overflow: hidden;
+}
+
+.progress-bar-fill {
+  background: var(--no-red);
+  height: 100%;
+}
+
+.hint {
+  color: #777;
+}
+
+.app-footer {
+  text-align: center;
+  padding: 1rem;
+  color: #777;
+  font-size: 0.9rem;
+}
+
+@media (max-width: 480px) {
+  .main-nav {
+    justify-content: center;
+    width: 100%;
+  }
+}
