@@ -18,6 +18,7 @@ const JourneyPage = (() => {
   const CORRECT_TO_MASTER = 3;
   const MAX_OPTIONS = 4;
 
+  let orderCache = null;
   let journey = null;
   let currentLetter = null;
   let answered = false;
@@ -27,10 +28,12 @@ const JourneyPage = (() => {
   }
 
   function orderedLetters() {
+    if (orderCache) return orderCache;
     const known = allLetters().map((entry) => entry.letter);
     const ordered = LETTER_ORDER.filter((letter) => known.includes(letter));
     const rest = known.filter((letter) => !ordered.includes(letter));
-    return ordered.concat(rest);
+    orderCache = ordered.concat(rest);
+    return orderCache;
   }
 
   function entryFor(letter) {
@@ -118,6 +121,7 @@ const JourneyPage = (() => {
     card.querySelector("#journey-next").addEventListener("click", () => startRound(container));
     resetWrap.querySelector("#journey-reset").addEventListener("click", () => {
       if (window.confirm("Start the letter journey over from the first letters?")) {
+        currentLetter = null;
         journey = { unlocked: orderedLetters().slice(0, STARTING_LETTERS), scores: {} };
         persist();
         render(container);

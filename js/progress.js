@@ -77,7 +77,7 @@ const NorwegianProgress = (() => {
   function saveJourney(journey) {
     state.journey = {
       unlocked: Array.isArray(journey.unlocked) ? journey.unlocked.slice() : [],
-      scores: journey.scores || {}
+      scores: Object.assign({}, journey.scores)
     };
     save(state);
   }
