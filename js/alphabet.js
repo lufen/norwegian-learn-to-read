@@ -44,7 +44,8 @@ const AlphabetPage = (() => {
   }
 
   function selectLetter(entry, tile, container) {
-    window.NorwegianAudio.speak(entry.letter);
+    const spokenLetter = entry.letter.toLowerCase();
+    window.NorwegianAudio.speak(spokenLetter);
 
     const detail = container.querySelector("#letter-detail");
     detail.innerHTML = `
@@ -62,7 +63,7 @@ const AlphabetPage = (() => {
     `;
 
     detail.querySelector("#replay-letter").addEventListener("click", () => {
-      window.NorwegianAudio.speak(entry.letter);
+      window.NorwegianAudio.speak(spokenLetter);
     });
     detail.querySelector("#mark-mastered").addEventListener("click", () => {
       window.NorwegianProgress.markLetterMastered(entry.letter);
