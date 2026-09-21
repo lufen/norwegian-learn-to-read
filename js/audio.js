@@ -7,6 +7,7 @@
 const NorwegianAudio = (() => {
   let cachedVoice = null;
   let voicesReady = false;
+  let speakRequest = 0;
 
   function pickVoice() {
     if (!("speechSynthesis" in window)) return null;
@@ -30,22 +31,28 @@ const NorwegianAudio = (() => {
 
   /**
    * Speak the given text aloud.
+   * Speech is queued on the next macrotask so cancel() can settle; if another
+   * speak() call arrives first, this request is dropped.
    * @param {string} text
    * @param {{rate?: number}} [options]
-   * @returns {boolean} whether speech was attempted
+   * @returns {boolean} whether the request was accepted; it may still be superseded
    */
   function speak(text, options = {}) {
     if (!text || typeof window === "undefined" || !("speechSynthesis" in window)) {
       return false;
     }
+    const requestId = ++speakRequest;
     window.speechSynthesis.cancel();
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.lang = "nb-NO";
-    utterance.rate = options.rate || NorwegianSettings.getAudioRate();
-    if (cachedVoice) {
-      utterance.voice = cachedVoice;
-    }
-    window.speechSynthesis.speak(utterance);
+    window.setTimeout(() => {
+      if (requestId !== speakRequest) return;
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = "nb-NO";
+      utterance.rate = options.rate || NorwegianSettings.getAudioRate();
+      if (cachedVoice) {
+        utterance.voice = cachedVoice;
+      }
+      window.speechSynthesis.speak(utterance);
+    }, 0);
     return true;
   }
 
