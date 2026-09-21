@@ -31,9 +31,11 @@ const NorwegianAudio = (() => {
 
   /**
    * Speak the given text aloud.
+   * Speech is queued on the next macrotask so cancel() can settle; if another
+   * speak() call arrives first, this request is dropped.
    * @param {string} text
    * @param {{rate?: number}} [options]
-   * @returns {boolean} whether speech was queued
+   * @returns {boolean} whether speech could be queued
    */
   function speak(text, options = {}) {
     if (!text || typeof window === "undefined" || !("speechSynthesis" in window)) {

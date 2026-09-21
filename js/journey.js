@@ -184,7 +184,7 @@ const JourneyPage = (() => {
   function speakLetter(letter) {
     const entry = entryFor(letter);
     // Collapse sustained cues like "mmm" to one clean Journey prompt.
-    const sound = ((entry && entry.spokenSound) || letter.toLowerCase()).replace(/^(.)(\1)+$/u, "$1");
+    const sound = ((entry && entry.spokenSound) || letter.toLowerCase()).trim().toLowerCase().replace(/(.)\1+/gu, "$1");
     window.NorwegianAudio.speak(sound, { rate: Math.min(window.NorwegianSettings.getAudioRate(), LETTER_SOUND_MAX_RATE) });
   }
 
