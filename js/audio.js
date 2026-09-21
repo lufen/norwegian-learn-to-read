@@ -53,8 +53,6 @@ const NorwegianAudio = (() => {
       }
       window.speechSynthesis.speak(utterance);
     }, 0);
-    // This reports that the request was accepted. A newer speak() call can
-    // still supersede it before the queued task creates the utterance.
     return true;
   }
 
