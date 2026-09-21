@@ -33,7 +33,7 @@ const NorwegianAudio = (() => {
    * Speak the given text aloud.
    * @param {string} text
    * @param {{rate?: number}} [options]
-   * @returns {boolean} whether speech was attempted
+   * @returns {boolean} whether speech was queued
    */
   function speak(text, options = {}) {
     if (!text || typeof window === "undefined" || !("speechSynthesis" in window)) {
