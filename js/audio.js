@@ -35,7 +35,7 @@ const NorwegianAudio = (() => {
    * speak() call arrives first, this request is dropped.
    * @param {string} text
    * @param {{rate?: number}} [options]
-   * @returns {boolean} whether speech could be queued
+   * @returns {boolean} whether the request was accepted; it may still be superseded
    */
   function speak(text, options = {}) {
     if (!text || typeof window === "undefined" || !("speechSynthesis" in window)) {
