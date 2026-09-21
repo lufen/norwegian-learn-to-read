@@ -24,6 +24,7 @@ const JourneyPage = (() => {
   let currentLetter = null;
   let answered = false;
   let introSpoken = false;
+  let roundId = 0;
   // Transient (not persisted): letters just missed, retested soon so a wrong
   // answer is followed up on rather than possibly not seen again this session.
   let retryQueue = [];
@@ -143,6 +144,8 @@ const JourneyPage = (() => {
 
   function startRound(container) {
     answered = false;
+    roundId += 1;
+    const thisRound = roundId;
 
     const unlocked = journey.unlocked;
     currentLetter = pickLetter(unlocked);
@@ -169,7 +172,9 @@ const JourneyPage = (() => {
     if (!introSpoken) {
       introSpoken = true;
       window.NorwegianAudio.speak("Trykk på bokstaven du hører.");
-      window.setTimeout(() => speakLetter(currentLetter), 1400);
+      window.setTimeout(() => {
+        if (thisRound === roundId) speakLetter(currentLetter);
+      }, 1400);
     } else {
       speakLetter(currentLetter);
     }
@@ -177,7 +182,8 @@ const JourneyPage = (() => {
 
   function speakLetter(letter) {
     const entry = entryFor(letter);
-    window.NorwegianAudio.speak((entry && entry.spokenSound) || letter.toLowerCase());
+    const sound = ((entry && entry.spokenSound) || letter.toLowerCase()).replace(/^(.)(\1)+$/u, "$1");
+    window.NorwegianAudio.speak(sound, { rate: Math.min(window.NorwegianSettings.getAudioRate(), 0.85) });
   }
 
   /**
