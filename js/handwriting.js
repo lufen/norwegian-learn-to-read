@@ -40,7 +40,7 @@ const HandwritingPage = (() => {
         <canvas id="trace-canvas" class="trace-canvas" width="${CANVAS_WIDTH}" height="${CANVAS_HEIGHT}" aria-label="Animated demonstration of how to write the letter ${entry.letter}"></canvas>
         <p class="hint" id="stroke-hint">Get a pencil and paper ready, then press play.</p>
         <div class="detail-actions">
-          <button type="button" class="btn" id="hear-letter">🔊 Hear it</button>
+          ${window.SoundButton.html({ kind: "letter", value: entry.letter, label: "Hear it" })}
           <button type="button" class="btn btn-secondary" id="replay-trace">▶ Watch again</button>
         </div>
         <div class="feedback ${alreadyPracticed ? "feedback-correct" : ""}" id="trace-feedback" aria-live="polite">
@@ -64,9 +64,6 @@ const HandwritingPage = (() => {
       window.NorwegianAudio.speak("Se hvordan bokstaven skrives, og øv med blyant på papir.");
     }
 
-    container.querySelector("#hear-letter").addEventListener("click", () => {
-      window.NorwegianAudio.speak(entry.spokenSound || entry.letter.toLowerCase());
-    });
     container.querySelector("#replay-trace").addEventListener("click", () => {
       playAnimation(context, entry, container);
     });

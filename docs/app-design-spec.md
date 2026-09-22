@@ -341,9 +341,9 @@ All 8 blocking issues and most non-blocking issues above are now fixed:
   independent.
 - **Curriculum badge**: now also flags common Norwegian sound patterns
   (`kj`, `sk`, `skj`, `sj`, `gj`, `ng`), not just distinct letters, and is
-  a tappable button that speaks its explanation in Norwegian
-  (`Curriculum.bindBadgeAudio()`), wired into Spell Words, Write Words,
-  and (newly) Little Books.
+  a tappable button that speaks its explanation in Norwegian (it's a
+  `SoundButton`, so no per-module wiring), shown in Spell Words, Write
+  Words, and Little Books.
 - **Session pacing on profile switch**: `resetSessionPacing()` now runs
   whenever the active profile changes, so a sibling starts a fresh
   15-minute clock instead of inheriting one.

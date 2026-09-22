@@ -106,14 +106,14 @@ const ReadingPage = (() => {
           ${window.Curriculum ? window.Curriculum.newLetterBadge(page.text) : ""}
           <p class="reading-hint">Try reading it yourself first! 🤗</p>
           <div class="detail-actions">
-            <button type="button" class="btn" id="read-sentence">🔊 Hear it</button>
-            <button type="button" class="btn btn-secondary" id="sound-words">🧩 Sound it out with me</button>
+            ${window.SoundButton.html({ kind: "word", value: page.text, label: "Hear it", id: "read-sentence" })}
+            ${window.SoundButton.html({ kind: "sound-out", value: page.keyword, label: "Sound it out with me", variant: "secondary", id: "sound-words" })}
           </div>
           <div class="reading-questions">
             <section class="reading-question">
               <p class="reading-question-count">Question ${questionNumber}</p>
               <div class="reading-prompt">
-                <button type="button" class="btn btn-icon" id="replay-prompt" aria-label="Play the question aloud">🔊</button>
+                ${window.SoundButton.html({ kind: "word", value: question.spokenPrompt, variant: "icon", id: "replay-prompt", ariaLabel: "Play the question aloud" })}
                 <h3>${question.prompt}</h3>
               </div>
               <div class="reading-choices">
@@ -131,8 +131,6 @@ const ReadingPage = (() => {
       </div>
     `;
 
-    if (window.Curriculum) window.Curriculum.bindBadgeAudio(container);
-
     container.querySelectorAll("[data-book]").forEach((button) => {
       if (button.disabled) return;
       button.addEventListener("click", () => {
@@ -144,17 +142,12 @@ const ReadingPage = (() => {
         render(container);
       });
     });
-    container.querySelector("#read-sentence").addEventListener("click", () => {
-      helpUsedThisAttempt = true;
-      window.NorwegianAudio.speak(page.text);
-    });
-    container.querySelector("#sound-words").addEventListener("click", () => {
-      helpUsedThisAttempt = true;
-      soundOutWord(page.keyword);
-    });
-    container.querySelector("#replay-prompt").addEventListener("click", () => {
-      helpUsedThisAttempt = true;
-      window.NorwegianAudio.speak(question.spokenPrompt);
+    // The buttons themselves play their sound (SoundButton handles that
+    // globally); these listeners only record that help was asked for.
+    ["#read-sentence", "#sound-words", "#replay-prompt"].forEach((selector) => {
+      container.querySelector(selector).addEventListener("click", () => {
+        helpUsedThisAttempt = true;
+      });
     });
     container.querySelector(".reading-questions").addEventListener("click", (event) => {
       const button = event.target.closest(".reading-choice");
@@ -192,13 +185,12 @@ const ReadingPage = (() => {
         feedback.className = "feedback reading-feedback feedback-incorrect";
         feedback.textContent = "La oss lytte til lydene sammen — let's sound it out together.";
         helpUsedThisAttempt = true;
-        soundOutWord(question.answerWord);
-        // Let them try again once they've heard it sounded out, instead of
-        // leaving every choice permanently disabled.
-        window.setTimeout(() => {
+        // Let them try again once they've actually heard it sounded out,
+        // instead of leaving every choice permanently disabled.
+        soundOutWord(question.answerWord, () => {
           if (window.NorwegianProgress.getEpoch() !== scheduledEpoch) return;
           container.querySelectorAll(".reading-choice").forEach((btn) => { btn.disabled = false; });
-        }, letterCountDelay(question.answerWord));
+        });
       }
     });
     container.querySelector("#previous-page").addEventListener("click", () => {
@@ -275,20 +267,14 @@ const ReadingPage = (() => {
     });
   }
 
-  /** Speak a word one sound at a time, then whole, to model blending. */
-  function soundOutWord(word) {
-    const letters = word.split("");
-    letters.forEach((letter, index) => {
-      const entry = (window.NORWEGIAN_LETTERS || []).find((item) => item.letter.toLowerCase() === letter.toLowerCase());
-      const sound = entry ? (entry.spokenSound || entry.sound || letter) : letter;
-      window.setTimeout(() => window.NorwegianAudio.speak(sound), index * 500);
-    });
-    window.setTimeout(() => window.NorwegianAudio.speak(word), letters.length * 500 + 300);
-  }
-
-  /** How long soundOutWord(word) takes to finish, in ms. */
-  function letterCountDelay(word) {
-    return word.length * 500 + 800;
+  /**
+   * Speak a word one sound at a time, then whole, to model blending.
+   * Each sound waits for the previous one to finish (a fixed timer would let
+   * the next utterance cancel the current one), and a second tap replaces the
+   * running sequence instead of overlapping with it.
+   */
+  function soundOutWord(word, onDone) {
+    window.NorwegianAudio.soundOutWord(word, { onDone });
   }
 
   /**
