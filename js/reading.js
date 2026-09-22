@@ -192,13 +192,12 @@ const ReadingPage = (() => {
         feedback.className = "feedback reading-feedback feedback-incorrect";
         feedback.textContent = "La oss lytte til lydene sammen — let's sound it out together.";
         helpUsedThisAttempt = true;
-        soundOutWord(question.answerWord);
-        // Let them try again once they've heard it sounded out, instead of
-        // leaving every choice permanently disabled.
-        window.setTimeout(() => {
+        // Let them try again once they've actually heard it sounded out,
+        // instead of leaving every choice permanently disabled.
+        soundOutWord(question.answerWord, () => {
           if (window.NorwegianProgress.getEpoch() !== scheduledEpoch) return;
           container.querySelectorAll(".reading-choice").forEach((btn) => { btn.disabled = false; });
-        }, letterCountDelay(question.answerWord));
+        });
       }
     });
     container.querySelector("#previous-page").addEventListener("click", () => {
@@ -275,20 +274,14 @@ const ReadingPage = (() => {
     });
   }
 
-  /** Speak a word one sound at a time, then whole, to model blending. */
-  function soundOutWord(word) {
-    const letters = word.split("");
-    letters.forEach((letter, index) => {
-      const entry = (window.NORWEGIAN_LETTERS || []).find((item) => item.letter.toLowerCase() === letter.toLowerCase());
-      const sound = entry ? (entry.spokenSound || entry.sound || letter) : letter;
-      window.setTimeout(() => window.NorwegianAudio.speak(sound), index * 500);
-    });
-    window.setTimeout(() => window.NorwegianAudio.speak(word), letters.length * 500 + 300);
-  }
-
-  /** How long soundOutWord(word) takes to finish, in ms. */
-  function letterCountDelay(word) {
-    return word.length * 500 + 800;
+  /**
+   * Speak a word one sound at a time, then whole, to model blending.
+   * Each sound waits for the previous one to finish (a fixed timer would let
+   * the next utterance cancel the current one), and a second tap replaces the
+   * running sequence instead of overlapping with it.
+   */
+  function soundOutWord(word, onDone) {
+    window.NorwegianAudio.soundOutWord(word, { onDone });
   }
 
   /**

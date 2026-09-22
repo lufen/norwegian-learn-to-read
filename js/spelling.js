@@ -74,15 +74,23 @@ const SpellingPage = (() => {
     const displayParts = word.text.includes(" ")
       ? word.syllables
       : Array.from(word.text);
-    const soundParts = word.phonemes || displayParts;
-    displayParts.forEach((part, index) => {
+    displayParts.forEach((part) => {
       const chip = document.createElement("button");
       chip.type = "button";
       chip.className = "syllable-chip";
       chip.textContent = part;
-      const sound = soundParts[index] || part;
-      chip.setAttribute("aria-label", `Letter ${part}. Sound ${sound}`);
-      chip.addEventListener("click", () => window.NorwegianAudio.speak(sound));
+      // A chip plays the sound the child should make, never the IPA symbol
+      // from the dataset — single letters go through the shared letter-sound
+      // helper so they match Letters & Sounds and Letter Journey exactly.
+      const isSingleLetter = String(part).length === 1;
+      chip.setAttribute("aria-label", `Play the sound of ${part}`);
+      chip.addEventListener("click", () => {
+        if (isSingleLetter) {
+          window.NorwegianAudio.speakLetter(part);
+        } else {
+          window.NorwegianAudio.speak(part);
+        }
+      });
       syllablesContainer.appendChild(chip);
     });
 

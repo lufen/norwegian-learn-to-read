@@ -95,8 +95,13 @@ const App = (() => {
     const container = document.getElementById("page-container");
     const normalizedPage = VALID_PAGES.includes(pageName) ? pageName : "home";
     currentPage = normalizedPage;
-    if (window.NorwegianAudio && PAGE_SPOKEN_LABELS[normalizedPage]) {
-      window.NorwegianAudio.speak(PAGE_SPOKEN_LABELS[normalizedPage]);
+    if (window.NorwegianAudio) {
+      // Never let a letter sound (or a sound-it-out sequence) from the page
+      // being left keep playing over the new one.
+      window.NorwegianAudio.cancel();
+      if (PAGE_SPOKEN_LABELS[normalizedPage]) {
+        window.NorwegianAudio.speak(PAGE_SPOKEN_LABELS[normalizedPage]);
+      }
     }
     const renderer = getRenderer(normalizedPage);
     renderer(container);

@@ -18,14 +18,12 @@ const JourneyPage = (() => {
   const UNLOCK_BATCH_SIZE = 2;
   const CORRECT_TO_MASTER = 3;
   const MAX_OPTIONS = 4;
-  const LETTER_SOUND_MAX_RATE = 0.85;
 
   let orderCache = null;
   let journey = null;
   let currentLetter = null;
   let answered = false;
   let introSpoken = false;
-  let roundId = 0;
   // Transient (not persisted): letters just missed, retested soon so a wrong
   // answer is followed up on rather than possibly not seen again this session.
   let retryQueue = [];
@@ -145,8 +143,6 @@ const JourneyPage = (() => {
 
   function startRound(container) {
     answered = false;
-    roundId += 1;
-    const thisRound = roundId;
 
     const unlocked = journey.unlocked;
     currentLetter = pickLetter(unlocked);
@@ -172,22 +168,19 @@ const JourneyPage = (() => {
     updateStatus(container);
     if (!introSpoken) {
       introSpoken = true;
-      window.NorwegianAudio.speak("Trykk på bokstaven du hører.");
-      window.setTimeout(() => {
-        if (thisRound === roundId) speakLetter(currentLetter);
-      }, 1400);
+      // One sequence, so the letter sound starts when the instruction has
+      // actually finished instead of cutting it off on a slow voice.
+      window.NorwegianAudio.speakSequence([
+        { text: "Trykk på bokstaven du hører." },
+        { letter: currentLetter }
+      ]);
     } else {
       speakLetter(currentLetter);
     }
   }
 
   function speakLetter(letter) {
-    const entry = entryFor(letter);
-    // Collapse sustained cues like "mmm" to one clean Journey prompt.
-    const rawSound = ((entry && entry.spokenSound) || letter.toLowerCase()).trim().toLowerCase();
-    const repeatedCue = rawSound.match(/^(.)\1{2,}$/u);
-    const sound = repeatedCue ? repeatedCue[1] : rawSound;
-    window.NorwegianAudio.speak(sound, { rate: Math.min(window.NorwegianSettings.getAudioRate(), LETTER_SOUND_MAX_RATE) });
+    window.NorwegianAudio.speakLetter(letter);
   }
 
   /**

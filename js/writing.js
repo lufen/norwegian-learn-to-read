@@ -177,7 +177,7 @@ const WritingPage = (() => {
       slots[nextSlotIndex].filled = true;
       tile.used = true;
       wrongAttemptsOnSlot = 0;
-      window.NorwegianAudio.speak(tile.letter);
+      window.NorwegianAudio.speakLetter(tile.letter);
       renderSlotsAndBank(card, word);
       if (slots.every((slot) => slot.filled)) {
         solved = true;
@@ -191,9 +191,8 @@ const WritingPage = (() => {
       if (wrongAttemptsOnSlot >= 2) {
         // Re-teach instead of just saying "wrong" again: say the sound the
         // child needs next so a stuck attempt doesn't turn into guessing.
-        const entry = (window.NORWEGIAN_LETTERS || []).find((item) => item.letter.toLowerCase() === expected);
         feedback.textContent = "Listen: that's the sound you need next.";
-        window.NorwegianAudio.speak((entry && entry.spokenSound) || expected);
+        window.NorwegianAudio.speakLetter(expected);
       } else {
         feedback.textContent = "Not that one — listen again and try another letter.";
       }

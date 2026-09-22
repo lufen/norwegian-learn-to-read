@@ -65,7 +65,7 @@ const HandwritingPage = (() => {
     }
 
     container.querySelector("#hear-letter").addEventListener("click", () => {
-      window.NorwegianAudio.speak(entry.spokenSound || entry.letter.toLowerCase());
+      window.NorwegianAudio.speakLetter(entry.letter);
     });
     container.querySelector("#replay-trace").addEventListener("click", () => {
       playAnimation(context, entry, container);

@@ -36,7 +36,7 @@ The site deploys automatically to [GitHub Pages](https://lufen.github.io/norwegi
 index.html          Main page / app shell
 css/style.css        Norwegian flag-themed, responsive, accessible styling
 js/data.js            Norwegian letters & word dataset (levels 1-6)
-js/audio.js           Speech synthesis wrapper (letter/word pronunciation)
+js/audio.js           Speech synthesis wrapper — shared letter-sound cue, blending sequences, cancel
 js/settings.js        Text size, dyslexia-friendly font, audio speed (persisted)
 js/profiles.js         Per-child profile switching (localStorage)
 js/progress.js         Mastered letters/words tracking, profile-scoped (localStorage)
