@@ -97,9 +97,7 @@ const JourneyPage = (() => {
     card.className = "word-card journey-card";
     card.innerHTML = `
       <div class="journey-status" id="journey-status" aria-live="polite"></div>
-      <div class="detail-actions">
-        <button type="button" class="btn" id="journey-replay">🔊 Play sound</button>
-      </div>
+      <div class="detail-actions" id="journey-replay-actions"></div>
       <div class="letter-grid journey-options" id="journey-options" role="group" aria-label="Letter options"></div>
       <div class="feedback" id="journey-feedback" aria-live="polite"></div>
       <div class="nav-buttons">
@@ -118,9 +116,6 @@ const JourneyPage = (() => {
     resetWrap.innerHTML = `<button type="button" class="btn btn-outline" id="journey-reset">Start journey over</button>`;
     container.appendChild(resetWrap);
 
-    card.querySelector("#journey-replay").addEventListener("click", () => {
-      if (currentLetter) speakLetter(currentLetter);
-    });
     card.querySelector("#journey-next").addEventListener("click", () => startRound(container));
     resetWrap.querySelector("#journey-reset").addEventListener("click", () => {
       window.ChildConfirm.show({
@@ -165,6 +160,8 @@ const JourneyPage = (() => {
     feedback.className = "feedback";
     feedback.innerHTML = "";
 
+    renderReplayButton(container, currentLetter);
+
     updateStatus(container);
     if (!introSpoken) {
       introSpoken = true;
@@ -180,7 +177,14 @@ const JourneyPage = (() => {
   }
 
   function speakLetter(letter) {
-    window.NorwegianAudio.speakLetter(letter);
+    window.SoundButton.play("letter", letter);
+  }
+
+  /** Re-render the replay control so it always points at the letter being asked about. */
+  function renderReplayButton(container, letter) {
+    const actions = container.querySelector("#journey-replay-actions");
+    if (!actions) return;
+    actions.innerHTML = window.SoundButton.html({ kind: "letter", value: letter, label: "Play sound" });
   }
 
   /**

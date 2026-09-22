@@ -51,13 +51,13 @@ const AlphabetPage = (() => {
   }
 
   function selectLetter(entry, tile, container) {
-    window.NorwegianAudio.speakLetter(entry.letter);
+    window.SoundButton.play("letter", entry.letter);
 
     const detail = container.querySelector("#letter-detail");
     detail.innerHTML = `
       <h3>${entry.letter} <span class="sound-hint">(${entry.phoneme || entry.sound})</span></h3>
       <div class="detail-actions">
-        <button type="button" class="btn" id="replay-letter">🔊 Play sound</button>
+        ${window.SoundButton.html({ kind: "letter", value: entry.letter, label: "Play sound" })}
         <button type="button" class="btn btn-secondary" id="mark-mastered">
           ${window.NorwegianProgress.isLetterMastered(entry.letter) ? "✅ I know it" : "☆ I know this letter"}
         </button>
@@ -68,9 +68,6 @@ const AlphabetPage = (() => {
       </ul>
     `;
 
-    detail.querySelector("#replay-letter").addEventListener("click", () => {
-      window.NorwegianAudio.speakLetter(entry.letter);
-    });
     detail.querySelector("#mark-mastered").addEventListener("click", () => {
       window.NorwegianProgress.markLetterMastered(entry.letter);
       tile.classList.add("mastered");

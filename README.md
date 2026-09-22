@@ -37,6 +37,7 @@ index.html          Main page / app shell
 css/style.css        Norwegian flag-themed, responsive, accessible styling
 js/data.js            Norwegian letters & word dataset (levels 1-6)
 js/audio.js           Speech synthesis wrapper — shared letter-sound cue, blending sequences, cancel
+js/sound-button.js    Shared tap-to-hear button component used by every module
 js/settings.js        Text size, dyslexia-friendly font, audio speed (persisted)
 js/profiles.js         Per-child profile switching (localStorage)
 js/progress.js         Mastered letters/words tracking, profile-scoped (localStorage)

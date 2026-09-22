@@ -44,25 +44,29 @@ const Curriculum = (() => {
     return requiredLettersFor(text).filter((letter) => !known.has(letter));
   }
 
-  /** Small HTML badge to show next to a word/page when it uses unmet letters or sound patterns. Empty string if none. */
+  /**
+   * Small HTML badge to show next to a word/page when it uses unmet letters or
+   * sound patterns. Empty string if none. It's a SoundButton like every other
+   * tap-to-hear control, so it plays its explanation with no extra wiring.
+   */
   function newLetterBadge(text) {
     const unknown = unknownLettersIn(text);
     const patterns = patternsIn(text);
     if (unknown.length === 0 && patterns.length === 0) return "";
     const parts = unknown.concat(patterns);
-    const spoken = `Dette ordet har lyder du ikke har møtt ennå i bokstavreisen: ${parts.join(", ")}.`;
-    return `<button type="button" class="new-letter-badge" data-spoken="${spoken.replace(/"/g, "&quot;")}" title="Uses sounds not yet unlocked in Letter Journey: ${parts.join(", ")}">🆕 ${parts.join("")}</button>`;
-  }
-
-  /** Wire up tap-to-hear on any newLetterBadge() buttons already inserted into `container`. */
-  function bindBadgeAudio(container) {
-    if (!container || !window.NorwegianAudio) return;
-    container.querySelectorAll(".new-letter-badge[data-spoken]").forEach((btn) => {
-      btn.addEventListener("click", () => window.NorwegianAudio.speak(btn.dataset.spoken));
+    return window.SoundButton.html({
+      kind: "word",
+      value: `Dette ordet har lyder du ikke har møtt ennå i bokstavreisen: ${parts.join(", ")}.`,
+      icon: "🆕",
+      label: parts.join(""),
+      variant: "bare",
+      className: "new-letter-badge",
+      title: `Uses sounds not yet unlocked in Letter Journey: ${parts.join(", ")}`,
+      ariaLabel: `Hear which sounds in this are new: ${parts.join(", ")}`
     });
   }
 
-  return { knownLetters, requiredLettersFor, unknownLettersIn, patternsIn, newLetterBadge, bindBadgeAudio };
+  return { knownLetters, requiredLettersFor, unknownLettersIn, patternsIn, newLetterBadge };
 })();
 
 if (typeof window !== "undefined") {

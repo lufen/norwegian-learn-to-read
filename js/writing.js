@@ -65,8 +65,8 @@ const WritingPage = (() => {
       <div class="word-emoji" aria-hidden="true">${word.emoji || "📝"}</div>
       ${window.Curriculum ? window.Curriculum.newLetterBadge(word.text) : ""}
       <div class="detail-actions">
-        <button type="button" class="btn" id="play-word">🔊 Play word</button>
-        <button type="button" class="btn btn-secondary" id="play-slow">🐢 Play slowly</button>
+        ${window.SoundButton.html({ kind: "word", value: word.text, label: "Play word" })}
+        ${window.SoundButton.html({ kind: "word", value: word.text, label: "Play slowly", icon: "🐢", variant: "secondary", rate: 0.6, ariaLabel: `Play ${word.text} slowly` })}
       </div>
       <div class="build-slots" id="build-slots" aria-live="polite"></div>
       <div class="build-bank" id="build-bank"></div>
@@ -80,14 +80,7 @@ const WritingPage = (() => {
       </div>
     `;
     container.appendChild(card);
-    if (window.Curriculum) window.Curriculum.bindBadgeAudio(card);
 
-    card.querySelector("#play-word").addEventListener("click", () => {
-      window.NorwegianAudio.speak(word.text, { rate: window.NorwegianSettings.getAudioRate() });
-    });
-    card.querySelector("#play-slow").addEventListener("click", () => {
-      window.NorwegianAudio.speak(word.text, { rate: 0.6 });
-    });
     card.querySelector("#clear-attempt").addEventListener("click", () => {
       setupAttempt(word);
       renderSlotsAndBank(card, word);
@@ -177,7 +170,7 @@ const WritingPage = (() => {
       slots[nextSlotIndex].filled = true;
       tile.used = true;
       wrongAttemptsOnSlot = 0;
-      window.NorwegianAudio.speakLetter(tile.letter);
+      window.SoundButton.play("letter", tile.letter);
       renderSlotsAndBank(card, word);
       if (slots.every((slot) => slot.filled)) {
         solved = true;
@@ -192,7 +185,7 @@ const WritingPage = (() => {
         // Re-teach instead of just saying "wrong" again: say the sound the
         // child needs next so a stuck attempt doesn't turn into guessing.
         feedback.textContent = "Listen: that's the sound you need next.";
-        window.NorwegianAudio.speakLetter(expected);
+        window.SoundButton.play("letter", expected);
       } else {
         feedback.textContent = "Not that one — listen again and try another letter.";
       }

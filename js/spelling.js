@@ -57,7 +57,7 @@ const SpellingPage = (() => {
       <div class="word-syllables" id="word-syllables"></div>
       <p class="word-translation">${word.translation}</p>
       <div class="detail-actions">
-        <button type="button" class="btn" id="blend-word">🔊 Play whole word</button>
+        ${window.SoundButton.html({ kind: "word", value: word.text, label: "Play whole word" })}
         <button type="button" class="btn btn-secondary" id="mark-word-mastered">
           ${window.NorwegianProgress.isWordMastered(word.text) ? "✅ I can read it" : "☆ I can read this word"}
         </button>
@@ -68,35 +68,25 @@ const SpellingPage = (() => {
       </div>
     `;
     container.appendChild(card);
-    if (window.Curriculum) window.Curriculum.bindBadgeAudio(card);
 
     const syllablesContainer = card.querySelector("#word-syllables");
     const displayParts = word.text.includes(" ")
       ? word.syllables
       : Array.from(word.text);
     displayParts.forEach((part) => {
-      const chip = document.createElement("button");
-      chip.type = "button";
-      chip.className = "syllable-chip";
-      chip.textContent = part;
       // A chip plays the sound the child should make, never the IPA symbol
-      // from the dataset — single letters go through the shared letter-sound
-      // helper so they match Letters & Sounds and Letter Journey exactly.
-      const isSingleLetter = String(part).length === 1;
-      chip.setAttribute("aria-label", `Play the sound of ${part}`);
-      chip.addEventListener("click", () => {
-        if (isSingleLetter) {
-          window.NorwegianAudio.speakLetter(part);
-        } else {
-          window.NorwegianAudio.speak(part);
-        }
-      });
-      syllablesContainer.appendChild(chip);
+      // from the dataset — single letters use the shared letter kind so they
+      // match Letters & Sounds and Letter Journey exactly.
+      syllablesContainer.appendChild(window.SoundButton.create({
+        kind: String(part).length === 1 ? "letter" : "word",
+        value: part,
+        icon: null,
+        label: part,
+        variant: "bare",
+        className: "syllable-chip"
+      }));
     });
 
-    card.querySelector("#blend-word").addEventListener("click", () => {
-      window.NorwegianAudio.speak(word.text);
-    });
     card.querySelector("#mark-word-mastered").addEventListener("click", () => {
       window.NorwegianProgress.markWordMastered(word.text);
       render(container);
