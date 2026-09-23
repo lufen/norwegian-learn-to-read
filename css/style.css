@@ -177,6 +177,80 @@ a {
   background: #fff8f0;
 }
 
+.home-activities {
+  margin-top: 1.5rem;
+}
+
+.home-activities summary {
+  cursor: pointer;
+  padding: 1rem;
+  border: 2px solid var(--no-blue);
+  border-radius: var(--radius);
+  font-weight: 700;
+}
+
+.home-recommendations .btn {
+  margin: 0.25rem;
+}
+
+.practice-session {
+  margin-top: 1rem;
+}
+
+.practice-session .btn,
+.challenges-page > .btn {
+  margin: 0.35rem;
+}
+
+.challenge-progress,
+.practice-session [role="status"] {
+  text-align: center;
+  font-size: 1.3rem;
+  color: var(--no-blue);
+}
+
+.challenges-page .reading-choices > .word-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  flex: 0 1 200px;
+  min-width: 0;
+  padding: 0.75rem;
+}
+
+.challenges-page .reading-choice {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+
+.challenge-sequence {
+  font-size: 1.5rem;
+  overflow-wrap: anywhere;
+}
+
+button,
+.nav-link,
+summary {
+  min-height: 48px;
+  min-width: 48px;
+  touch-action: manipulation;
+}
+
+button:focus-visible,
+a:focus-visible,
+summary:focus-visible,
+select:focus-visible {
+  outline: 3px solid #955600;
+  outline-offset: 4px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
 /* Buttons */
 .btn {
   border: none;
@@ -545,8 +619,8 @@ a {
   border: 3px solid var(--no-blue);
   border-radius: var(--radius);
   background: var(--no-white);
-  min-width: 2.6rem;
-  min-height: 2.6rem;
+  min-width: 48px;
+  min-height: 48px;
   padding: 0.4rem 0.6rem;
   font-size: 1.4rem;
   font-weight: 700;

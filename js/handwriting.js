@@ -18,11 +18,13 @@ const HandwritingPage = (() => {
   let animationFrame = null;
   let animationToken = 0;
   let introSpoken = false;
+  let session = null;
 
   function render(container) {
     stopAnimation();
+    session = window.PracticeSession.begin("handwriting", container, () => render(container));
     const saved = window.NorwegianProgress.getActivityState("handwriting");
-    letterIndex = Number.isInteger(saved.letterIndex) ? saved.letterIndex : letterIndex;
+    letterIndex = Number.isInteger(saved.letterIndex) ? saved.letterIndex : 0;
     letterIndex = Math.min(Math.max(letterIndex, 0), window.NORWEGIAN_LETTERS.length - 1);
     savePosition();
     const practiced = saved.practiced || {};
@@ -32,29 +34,32 @@ const HandwritingPage = (() => {
     container.innerHTML = `
       <div class="page-header">
         <h2>Skriv bokstaven — Write the letter</h2>
-        <p>Watch how the letter is written, then pick up a pencil and write it on paper.</p>
+        <p>Se på bokstaven. Skriv den på papir.</p>
+        ${window.SoundButton.html({ kind: "word", value: "Se på bokstaven. Skriv den på papir.", label: "Hør oppgaven" })}
       </div>
       <div class="handwriting-card">
         <div class="handwriting-letter">${entry.letter}</div>
-        <p class="sound-hint">The sound is <strong>${entry.phoneme || entry.sound}</strong>.</p>
+        <p class="sound-hint">Lyden er <strong>${entry.phoneme || entry.sound}</strong>.</p>
         <canvas id="trace-canvas" class="trace-canvas" width="${CANVAS_WIDTH}" height="${CANVAS_HEIGHT}" aria-label="Animated demonstration of how to write the letter ${entry.letter}"></canvas>
-        <p class="hint" id="stroke-hint">Get a pencil and paper ready, then press play.</p>
+        <p class="hint" id="stroke-hint">Finn fram blyant og papir.</p>
         <div class="detail-actions">
-          ${window.SoundButton.html({ kind: "letter", value: entry.letter, label: "Hear it" })}
-          <button type="button" class="btn btn-secondary" id="replay-trace">▶ Watch again</button>
+          ${window.SoundButton.html({ kind: "letter", value: entry.letter, label: "Hør lyden" })}
+          <button type="button" class="btn btn-secondary" id="replay-trace">▶ Se igjen</button>
         </div>
         <div class="feedback ${alreadyPracticed ? "feedback-correct" : ""}" id="trace-feedback" aria-live="polite">
-          ${alreadyPracticed ? "✅ Marked as practiced on paper. Nice work!" : "Write the letter on your paper, then tell the game you did it."}
+          ${alreadyPracticed ? "✅ Du har sagt at du har øvd på papir." : "Skriv på papir. Trykk når du er ferdig."}
         </div>
         <div class="detail-actions">
-          <button type="button" class="btn btn-secondary" id="mark-practiced">✏️ I wrote it on paper!</button>
+          <button type="button" class="btn btn-secondary" id="mark-practiced" ${session.has(entry.letter) ? "disabled" : ""}>✏️ Jeg skrev på papir!</button>
         </div>
         <div class="nav-buttons">
-          <button type="button" class="btn btn-outline" id="previous-letter">⟵ Previous</button>
-          <button type="button" class="btn btn-outline" id="next-letter">Next ⟶</button>
+          <button type="button" class="btn btn-outline" id="previous-letter">⟵ Forrige</button>
+          <button type="button" class="btn btn-outline" id="next-letter">Neste ⟶</button>
         </div>
       </div>
     `;
+    session.attach();
+    const active = window.PracticeSession.scope(container);
 
     const canvas = container.querySelector("#trace-canvas");
     const context = canvas.getContext("2d");
@@ -65,22 +70,28 @@ const HandwritingPage = (() => {
     }
 
     container.querySelector("#replay-trace").addEventListener("click", () => {
+      if (!active()) return;
       playAnimation(context, entry, container);
     });
-    container.querySelector("#mark-practiced").addEventListener("click", () => {
+    container.querySelector("#mark-practiced").addEventListener("click", (event) => {
+      if (!active() || session.has(entry.letter)) return;
+      event.currentTarget.disabled = true;
       const current = window.NorwegianProgress.getActivityState("handwriting");
       const updatedPracticed = Object.assign({}, current.practiced, { [entry.letter]: true });
       window.NorwegianProgress.saveActivityState("handwriting", { letterIndex, practiced: updatedPracticed });
       const feedback = container.querySelector("#trace-feedback");
       feedback.className = "feedback feedback-correct";
-      feedback.textContent = "✅ Marked as practiced on paper. Nice work!";
+      feedback.textContent = "✅ Du har sagt at du har øvd på papir.";
+      session.complete(entry.letter);
     });
     container.querySelector("#previous-letter").addEventListener("click", () => {
+      if (!active()) return;
       letterIndex = (letterIndex - 1 + window.NORWEGIAN_LETTERS.length) % window.NORWEGIAN_LETTERS.length;
       savePosition();
       render(container);
     });
     container.querySelector("#next-letter").addEventListener("click", () => {
+      if (!active()) return;
       letterIndex = (letterIndex + 1) % window.NORWEGIAN_LETTERS.length;
       savePosition();
       render(container);
@@ -168,14 +179,15 @@ const HandwritingPage = (() => {
     const token = (animationToken += 1);
     const strokes = getStrokes(entry);
     const hint = container.querySelector("#stroke-hint");
+    const active = window.PracticeSession.scope(container);
     drawStatic(context, entry);
 
     let strokeIndex = 0;
 
     function runStroke() {
-      if (token !== animationToken) return;
+      if (token !== animationToken || !active()) return;
       if (strokeIndex >= strokes.length) {
-        if (hint) hint.textContent = "That's the whole letter! Now try it yourself on paper.";
+        if (hint) hint.textContent = "Nå er bokstaven ferdig. Prøv på papir!";
         return;
       }
       const stroke = strokes[strokeIndex];
@@ -183,12 +195,12 @@ const HandwritingPage = (() => {
       const startedAt = performance.now();
       if (hint) {
         hint.textContent = strokes.length > 1
-          ? `Stroke ${strokeIndex + 1} of ${strokes.length}: follow the moving dot.`
-          : "Follow the moving dot.";
+          ? `Strek ${strokeIndex + 1} av ${strokes.length}. Følg prikken.`
+          : "Følg prikken.";
       }
 
       function step(now) {
-        if (token !== animationToken) return;
+        if (token !== animationToken || !active()) return;
         const elapsed = now - startedAt;
         const progress = Math.min(1, elapsed / STROKE_DURATION_MS);
         const distance = total * progress;

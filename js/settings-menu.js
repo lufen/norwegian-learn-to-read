@@ -8,29 +8,34 @@ const SettingsMenu = (() => {
     const panel = document.createElement("div");
     panel.className = "settings-panel";
     panel.innerHTML = `
-      <h3>Settings</h3>
+      <h3>For voksne</h3>
+      <p>Innstillinger og oversikt over øvingen, ikke en vurdering av barnets leseferdighet.</p>
+      <button type="button" class="btn" id="open-progress">📊 Se øvingen</button>
+      <p>Lyd: nettleserstemme brukes når et kontrollert norsk lydopptak mangler.
+        Uttalen kan variere mellom enheter. Lytt sammen med barnet.</p>
       <label class="settings-row">
-        Text size
+        Tekststørrelse
         <select id="text-size-select">
           <option value="normal">Normal</option>
-          <option value="large">Large</option>
-          <option value="xlarge">Extra large</option>
+          <option value="large">Stor</option>
+          <option value="xlarge">Ekstra stor</option>
         </select>
       </label>
       <label class="settings-row">
         <input type="checkbox" id="dyslexia-font-toggle" />
-        Dyslexia-friendly font
+        Alternativ skrifttype
       </label>
       <label class="settings-row">
-        Audio speed
+        Talehastighet
         <select id="audio-rate-select">
-          <option value="0.6">Slow</option>
+          <option value="0.6">Langsom</option>
           <option value="1">Normal</option>
-          <option value="1.3">Fast</option>
+          <option value="1.3">Rask</option>
         </select>
       </label>
     `;
     container.appendChild(panel);
+    panel.querySelector("#open-progress").addEventListener("click", () => window.App.navigate("progress"));
 
     const textSizeSelect = panel.querySelector("#text-size-select");
     textSizeSelect.value = window.NorwegianSettings.getTextSize();

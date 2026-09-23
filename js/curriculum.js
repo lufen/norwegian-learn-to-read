@@ -44,6 +44,24 @@ const Curriculum = (() => {
     return requiredLettersFor(text).filter((letter) => !known.has(letter));
   }
 
+  function recommendations() {
+    const scores = window.NorwegianProgress.getJourney().scores;
+    const ready = (text) => requiredLettersFor(text).every((letter) => scores[letter] >= 1)
+      && patternsIn(text).length === 0;
+    let word = null;
+    window.WORD_LEVELS.slice(1).some((level, offset) => {
+      const wordIndex = level.words.findIndex((item) => ready(item.text));
+      if (wordIndex < 0) return false;
+      word = { levelIndex: offset + 1, wordIndex, ...level.words[wordIndex] };
+      return true;
+    });
+    const reading = window.NorwegianProgress.getActivityState("reading");
+    const unlocked = Number.isInteger(reading.unlockedCount) ? reading.unlockedCount : 1;
+    const bookIndex = window.DECODABLE_BOOKS.findIndex((book, index) =>
+      index < unlocked && book.pages.every((page) => ready(page.text)));
+    return { word, bookIndex };
+  }
+
   /**
    * Small HTML badge to show next to a word/page when it uses unmet letters or
    * sound patterns. Empty string if none. It's a SoundButton like every other
@@ -56,17 +74,17 @@ const Curriculum = (() => {
     const parts = unknown.concat(patterns);
     return window.SoundButton.html({
       kind: "word",
-      value: `Dette ordet har lyder du ikke har møtt ennå i bokstavreisen: ${parts.join(", ")}.`,
+      value: `Her er bokstaver eller lydmønstre dere kan øve på sammen: ${parts.join(", ")}.`,
       icon: "🆕",
       label: parts.join(""),
       variant: "bare",
       className: "new-letter-badge",
-      title: `Uses sounds not yet unlocked in Letter Journey: ${parts.join(", ")}`,
+      title: `Bokstaver eller lydmønstre å øve på: ${parts.join(", ")}`,
       ariaLabel: `Hear which sounds in this are new: ${parts.join(", ")}`
     });
   }
 
-  return { knownLetters, requiredLettersFor, unknownLettersIn, patternsIn, newLetterBadge };
+  return { knownLetters, requiredLettersFor, unknownLettersIn, patternsIn, newLetterBadge, recommendations };
 })();
 
 if (typeof window !== "undefined") {

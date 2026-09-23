@@ -4,26 +4,26 @@
  */
 
 const NORWEGIAN_LETTERS = [
-  { letter: "A", sound: "a", phoneme: "ɑ", spokenSound: "a", examples: ["and (duck)", "app (monkey)", "arm (arm)"] },
-  { letter: "B", sound: "b", phoneme: "b", spokenSound: "bø", examples: ["bil (car)", "bok (book)", "ball (ball)"] },
-  { letter: "C", sound: "c", phoneme: "k", spokenSound: "kø", examples: ["camping (camping)", "cowboy (cowboy)"] },
-  { letter: "D", sound: "d", phoneme: "d", spokenSound: "dø", examples: ["dag (day)", "due (pigeon)", "dukke (doll)"] },
+  { letter: "A", sound: "a", phoneme: "ɑ", spokenSound: "a", examples: ["and (duck)", "ape (monkey)", "arm (arm)"] },
+  { letter: "B", sound: "b", phoneme: "b", spokenSound: "b", examples: ["bil (car)", "bok (book)", "ball (ball)"] },
+  { letter: "C", sound: "c", phoneme: "k", spokenSound: "k", examples: ["camping (camping)", "cowboy (cowboy)"] },
+  { letter: "D", sound: "d", phoneme: "d", spokenSound: "d", examples: ["dag (day)", "due (pigeon)", "dukke (doll)"] },
   { letter: "E", sound: "e", phoneme: "e", spokenSound: "e", examples: ["esel (donkey)", "eple (apple)", "elg (moose)"] },
   { letter: "F", sound: "f", phoneme: "f", spokenSound: "fff", examples: ["fisk (fish)", "far (father)", "fugl (bird)"] },
-  { letter: "G", sound: "g", phoneme: "g", spokenSound: "gø", examples: ["gris (pig)", "gul (yellow)", "geit (goat)"] },
-  { letter: "H", sound: "h", phoneme: "h", spokenSound: "hø", examples: ["hund (dog)", "hus (house)", "hest (horse)"] },
+  { letter: "G", sound: "g", phoneme: "g", spokenSound: "g", examples: ["gris (pig)", "gul (yellow)", "geit (goat)"] },
+  { letter: "H", sound: "h", phoneme: "h", spokenSound: "h", examples: ["hund (dog)", "hus (house)", "hest (horse)"] },
   { letter: "I", sound: "i", phoneme: "i", spokenSound: "i", examples: ["is (ice cream)", "igle (leech)"] },
-  { letter: "J", sound: "j", phoneme: "j", spokenSound: "jø", examples: ["jul (christmas)", "jente (girl)"] },
-  { letter: "K", sound: "k", phoneme: "k", spokenSound: "kø", examples: ["katt (cat)", "ku (cow)", "kake (cake)"] },
+  { letter: "J", sound: "j", phoneme: "j", spokenSound: "j", examples: ["jul (christmas)", "jente (girl)"] },
+  { letter: "K", sound: "k", phoneme: "k", spokenSound: "k", examples: ["katt (cat)", "ku (cow)", "kake (cake)"] },
   { letter: "L", sound: "l", phoneme: "l", spokenSound: "lll", examples: ["løve (lion)", "lys (light)"] },
   { letter: "M", sound: "m", phoneme: "m", spokenSound: "mmm", examples: ["mor (mother)", "mus (mouse)", "melk (milk)"] },
   { letter: "N", sound: "n", phoneme: "n", spokenSound: "nnn", examples: ["natt (night)", "null (zero)"] },
   { letter: "O", sound: "o", phoneme: "u", spokenSound: "o", examples: ["ost (cheese)", "okse (ox)"] },
-  { letter: "P", sound: "p", phoneme: "p", spokenSound: "pø", examples: ["pike (girl)", "penn (pen)"] },
-  { letter: "Q", sound: "q", phoneme: "k", spokenSound: "kø", examples: ["quiz (quiz)"] },
+  { letter: "P", sound: "p", phoneme: "p", spokenSound: "p", examples: ["pike (girl)", "penn (pen)"] },
+  { letter: "Q", sound: "q", phoneme: "k", spokenSound: "k", examples: ["quiz (quiz)"] },
   { letter: "R", sound: "r", phoneme: "r", spokenSound: "rrr", examples: ["rev (fox)", "regn (rain)"] },
   { letter: "S", sound: "s", phoneme: "s", spokenSound: "sss", examples: ["sol (sun)", "sko (shoe)"] },
-  { letter: "T", sound: "t", phoneme: "t", spokenSound: "tø", examples: ["tog (train)", "tre (tree)"] },
+  { letter: "T", sound: "t", phoneme: "t", spokenSound: "t", examples: ["tog (train)", "tre (tree)"] },
   { letter: "U", sound: "u", phoneme: "ʉ", spokenSound: "u", examples: ["ugle (owl)", "ull (wool)"] },
   { letter: "V", sound: "v", phoneme: "v", spokenSound: "vvv", examples: ["vann (water)", "vinter (winter)"] },
   { letter: "W", sound: "w", phoneme: "v", spokenSound: "vvv", examples: ["wc (toilet, loanword)"] },
@@ -34,6 +34,76 @@ const NORWEGIAN_LETTERS = [
   { letter: "Ø", sound: "ø", phoneme: "ø", spokenSound: "ø", examples: ["øy (island)", "ørn (eagle)"] },
   { letter: "Å", sound: "å", phoneme: "oː", spokenSound: "å", examples: ["år (year)", "ål (eel)"] }
 ];
+
+/*
+ * Explicit spelling groups for these words, not a Norwegian pronunciation
+ * algorithm or an educator-reviewed phoneme transcription. In particular, sk
+ * in sky/skinner differs from s + k in skole/fisk. Silent/dialect-dependent
+ * endings stay attached; doubled consonants are not played twice.
+ *
+ * Without a reviewed unit recording, audio uses the containing word to retain
+ * pronunciation context. These groups do not assert one phoneme per group.
+ */
+const NORWEGIAN_WORD_SOUND_UNITS = {
+  sol: ["s", "o", "l"],
+  bil: ["b", "i", "l"],
+  hus: ["h", "u", "s"],
+  mor: ["m", "o", "r"],
+  far: ["f", "a", "r"],
+  is: ["i", "s"],
+  gul: ["g", "u", "l"],
+  bok: ["b", "o", "k"],
+  katt: ["k", "a", "tt"],
+  hund: ["h", "u", "nd"],
+  ball: ["b", "a", "ll"],
+  fisk: ["f", "i", "s", "k"],
+  vann: ["v", "a", "nn"],
+  brød: ["b", "r", "ød"],
+  sky: ["sk", "y"],
+  skole: ["s", "k", "o", "l", "e"],
+  epler: ["e", "p", "l", "e", "r"],
+  blomst: ["b", "l", "o", "m", "s", "t"],
+  sykkel: ["s", "y", "kk", "e", "l"],
+  vinter: ["v", "i", "n", "t", "e", "r"],
+  sommer: ["s", "o", "mm", "e", "r"],
+  liten: ["l", "i", "t", "e", "n"],
+  stor: ["s", "t", "o", "r"],
+  kald: ["k", "a", "ld"],
+  søt: ["s", "ø", "t"],
+  katten: ["k", "a", "tt", "e", "n"],
+  sover: ["s", "o", "v", "e", "r"],
+  jeg: ["jeg"],
+  liker: ["l", "i", "k", "e", "r"],
+  bøker: ["b", "ø", "k", "e", "r"],
+  solen: ["s", "o", "l", "e", "n"],
+  skinner: ["sk", "i", "nn", "e", "r"],
+  hunden: ["h", "u", "nd", "e", "n"],
+  løper: ["l", "ø", "p", "e", "r"],
+  fort: ["f", "o", "rt"],
+  se: ["s", "e"],
+  er: ["e", "r"],
+  lyser: ["l", "y", "s", "e", "r"],
+  blå: ["b", "l", "å"],
+  kjører: ["kj", "ø", "r", "e", "r"],
+  ser: ["s", "e", "r"],
+  mus: ["m", "u", "s"],
+  sur: ["s", "u", "r"],
+  rar: ["r", "a", "r"],
+  lås: ["l", "å", "s"],
+  mil: ["m", "i", "l"]
+};
+
+/*
+ * No recordings have been supplied or reviewed. Optional local recordings can
+ * be registered here AFTER educator review. Keys: "letter:b", "word:sky",
+ * "unit:sky:0" (the sk group at index 0; never a context-free "sk" recording).
+ * Each entry requires {src, reviewStatus: "educator-reviewed", reviewedBy,
+ * reviewedAt: "YYYY-MM-DD", locale: "nb-NO", dialect}. Use a real reviewer,
+ * review date and dialect; src must resolve to this site's HTTP(S) origin.
+ * Review must check the precise target/context, no added vowel for consonants,
+ * clean start/end, and permission to distribute. Never label synthesis reviewed.
+ */
+const NORWEGIAN_RECORDINGS = {};
 
 const DECODABLE_BOOKS = [
   {
@@ -181,8 +251,8 @@ const WORD_LEVELS = [
     name: "Level 3: Tricky letters",
     description: "Words with doubled letters or two consonants sitting together.",
     words: [
-      { text: "katt", translation: "cat", phonemes: ["k", "ɑ", "t", "t"], syllables: ["k", "a", "tt"], emoji: "🐱" },
-      { text: "hund", translation: "dog", phonemes: ["h", "ʉ", "n", "d"], syllables: ["h", "u", "nd"], emoji: "🐶" },
+      { text: "katt", translation: "cat", phonemes: ["k", "ɑ", "t"], syllables: ["k", "a", "tt"], emoji: "🐱" },
+      { text: "hund", translation: "dog", syllables: ["h", "u", "nd"], emoji: "🐶" },
       { text: "ball", translation: "ball", syllables: ["b", "a", "ll"], emoji: "⚽" },
       { text: "fisk", translation: "fish", syllables: ["f", "i", "sk"], emoji: "🐟" },
       { text: "vann", translation: "water", syllables: ["v", "a", "nn"], emoji: "💧" },
@@ -244,4 +314,6 @@ if (typeof window !== "undefined") {
   window.NORWEGIAN_LETTERS = NORWEGIAN_LETTERS;
   window.WORD_LEVELS = WORD_LEVELS;
   window.DECODABLE_BOOKS = DECODABLE_BOOKS;
+  window.NORWEGIAN_WORD_SOUND_UNITS = NORWEGIAN_WORD_SOUND_UNITS;
+  window.NORWEGIAN_RECORDINGS = NORWEGIAN_RECORDINGS;
 }
