@@ -1,8 +1,7 @@
 /**
  * Letter Journey — a progression game.
- * The learner starts with just a couple of letters. Every letter needs a few
- * correct answers to be mastered; once every letter currently in play is
- * mastered, two new random letters are unlocked.
+ * Repeated sound-to-letter recognition unlocks the next useful letters.
+ * Three correct responses are participation evidence, not durable mastery.
  * Progress is stored in localStorage via NorwegianProgress.
  */
 
@@ -16,7 +15,7 @@ const JourneyPage = (() => {
 
   const STARTING_LETTERS = 2;
   const UNLOCK_BATCH_SIZE = 2;
-  const CORRECT_TO_MASTER = 3;
+  const CORRECT_TO_UNLOCK = 3;
   const MAX_OPTIONS = 4;
 
   let orderCache = null;
@@ -24,6 +23,8 @@ const JourneyPage = (() => {
   let currentLetter = null;
   let answered = false;
   let introSpoken = false;
+  let session = null;
+  let taskNumber = 0;
   // Transient (not persisted): letters just missed, retested soon so a wrong
   // answer is followed up on rather than possibly not seen again this session.
   let retryQueue = [];
@@ -50,7 +51,7 @@ const JourneyPage = (() => {
     const stored = window.NorwegianProgress.getJourney();
     const unlocked = stored.unlocked.filter((letter) => order.includes(letter));
     if (unlocked.length < STARTING_LETTERS) {
-      randomLetters(order.filter((letter) => !unlocked.includes(letter)), STARTING_LETTERS - unlocked.length)
+      order.filter((letter) => !unlocked.includes(letter)).slice(0, STARTING_LETTERS - unlocked.length)
         .forEach((letter) => unlocked.push(letter));
     }
     return { unlocked, scores: stored.scores };
@@ -64,8 +65,8 @@ const JourneyPage = (() => {
     return journey.scores[letter] || 0;
   }
 
-  function isMastered(letter) {
-    return scoreFor(letter) >= CORRECT_TO_MASTER;
+  function isRecognized(letter) {
+    return scoreFor(letter) >= CORRECT_TO_UNLOCK;
   }
 
   function lockedLetters() {
@@ -73,13 +74,20 @@ const JourneyPage = (() => {
   }
 
   function unlockIfReady() {
-    if (!journey.unlocked.every(isMastered)) return null;
-    const next = randomLetters(lockedLetters(), UNLOCK_BATCH_SIZE);
+    if (!journey.unlocked.every(isRecognized)) return null;
+    const next = lockedLetters().slice(0, UNLOCK_BATCH_SIZE);
     journey.unlocked.push(...next);
     return next.length > 0 ? next : null;
   }
 
   function render(container) {
+    const previousSession = session;
+    session = window.PracticeSession.begin("journey", container, () => render(container));
+    if (previousSession !== session) {
+      retryQueue = [];
+      currentLetter = null;
+      introSpoken = false;
+    }
     journey = loadJourney();
     persist();
 
@@ -89,7 +97,8 @@ const JourneyPage = (() => {
     heading.className = "page-header";
     heading.innerHTML = `
       <h2>Bokstavreisen — Letter Journey</h2>
-      <p>Start with a couple of letters and unlock new ones as you master them.</p>
+      <p>Hør lyden. Trykk på bokstaven.</p>
+      ${window.SoundButton.html({ kind: "word", value: "Hør lyden. Trykk på bokstaven.", label: "Hør oppgaven" })}
     `;
     container.appendChild(heading);
 
@@ -98,10 +107,10 @@ const JourneyPage = (() => {
     card.innerHTML = `
       <div class="journey-status" id="journey-status" aria-live="polite"></div>
       <div class="detail-actions" id="journey-replay-actions"></div>
-      <div class="letter-grid journey-options" id="journey-options" role="group" aria-label="Letter options"></div>
+      <div class="letter-grid journey-options" id="journey-options" role="group" aria-label="Velg bokstav"></div>
       <div class="feedback" id="journey-feedback" aria-live="polite"></div>
       <div class="nav-buttons">
-        <button type="button" class="btn btn-outline" id="journey-next">Next ⟶</button>
+        <button type="button" class="btn btn-outline" id="journey-next" disabled>Neste ⟶</button>
       </div>
     `;
     container.appendChild(card);
@@ -113,21 +122,27 @@ const JourneyPage = (() => {
 
     const resetWrap = document.createElement("div");
     resetWrap.className = "detail-actions";
-    resetWrap.innerHTML = `<button type="button" class="btn btn-outline" id="journey-reset">Start journey over</button>`;
+    resetWrap.innerHTML = `<button type="button" class="btn btn-outline" id="journey-reset">Start reisen på nytt</button>`;
     container.appendChild(resetWrap);
+    session.attach();
+    const active = window.PracticeSession.scope(container);
 
-    card.querySelector("#journey-next").addEventListener("click", () => startRound(container));
+    card.querySelector("#journey-next").addEventListener("click", () => {
+      if (active() && answered) startRound(container);
+    });
     resetWrap.querySelector("#journey-reset").addEventListener("click", () => {
       window.ChildConfirm.show({
-        message: "Start over? You'll lose your unlocked letters.",
+        message: "Starte på nytt? Da nullstilles bokstavreisen.",
         spokenMessage: "Vil du starte bokstavreisen på nytt? Da mister du bokstavene du har låst opp.",
-        confirmLabel: "🔄 Yes, start over",
-        cancelLabel: "↩️ No, keep going",
+        confirmLabel: "🔄 Start på nytt",
+        cancelLabel: "↩️ Fortsett å øve",
         onConfirm: () => {
+          if (!active()) return;
           currentLetter = null;
           retryQueue = [];
-          journey = { unlocked: randomLetters(orderedLetters(), STARTING_LETTERS), scores: {} };
+          journey = { unlocked: orderedLetters().slice(0, STARTING_LETTERS), scores: {} };
           persist();
+          window.PracticeSession.invalidate();
           render(container);
         }
       });
@@ -137,7 +152,10 @@ const JourneyPage = (() => {
   }
 
   function startRound(container) {
+    if (!session.active()) return;
     answered = false;
+    taskNumber += 1;
+    container.querySelector("#journey-next").disabled = true;
 
     const unlocked = journey.unlocked;
     currentLetter = pickLetter(unlocked);
@@ -150,7 +168,7 @@ const JourneyPage = (() => {
       tile.type = "button";
       tile.className = "letter-tile";
       tile.dataset.letter = letter;
-      tile.setAttribute("aria-label", `Letter ${letter}`);
+      tile.setAttribute("aria-label", `Bokstav ${letter}`);
       tile.innerHTML = `<span class="letter-tile-char">${letter}</span>`;
       tile.addEventListener("click", () => checkAnswer(letter, tile, container));
       optionsContainer.appendChild(tile);
@@ -184,11 +202,11 @@ const JourneyPage = (() => {
   function renderReplayButton(container, letter) {
     const actions = container.querySelector("#journey-replay-actions");
     if (!actions) return;
-    actions.innerHTML = window.SoundButton.html({ kind: "letter", value: letter, label: "Play sound" });
+    actions.innerHTML = window.SoundButton.html({ kind: "letter", value: letter, label: "Hør lyden" });
   }
 
   /**
-   * Prefer new/unmastered letters, but keep mastered letters in rotation for
+   * Prefer new letters, but keep previously recognized letters in rotation for
    * recall, and prioritize anything just missed so a wrong answer gets
    * retested soon rather than possibly not again this session.
    */
@@ -197,16 +215,12 @@ const JourneyPage = (() => {
     if (retryQueue.length > 0 && Math.random() < 0.6) {
       return retryQueue.shift();
     }
-    const unmastered = unlocked.filter((letter) => !isMastered(letter));
-    const practicePool = unmastered.length > 0 && Math.random() < 0.7 ? unmastered : unlocked;
+    const newLetters = unlocked.filter((letter) => !isRecognized(letter));
+    const practicePool = newLetters.length > 0 && Math.random() < 0.7 ? newLetters : unlocked;
     const candidates = practicePool.length > 0 ? practicePool : unlocked;
     const pool = candidates.length > 1 ? candidates.filter((l) => l !== currentLetter) : candidates;
     const source = pool.length > 0 ? pool : candidates;
     return source[Math.floor(Math.random() * source.length)];
-  }
-
-  function randomLetters(letters, count) {
-    return shuffle(letters).slice(0, Math.min(count, letters.length));
   }
 
   function buildOptions(correctLetter, unlocked) {
@@ -225,34 +239,21 @@ const JourneyPage = (() => {
   }
 
   function checkAnswer(letter, tile, container) {
-    if (answered) return;
+    if (answered || !session.active() || !tile.isConnected) return;
     answered = true;
 
     const isCorrect = letter === currentLetter;
     const entry = entryFor(currentLetter);
-    const wasMastered = isMastered(currentLetter);
+    const wasRecognized = isRecognized(currentLetter);
 
     if (isCorrect) {
-      journey.scores[currentLetter] = Math.min(scoreFor(currentLetter) + 1, CORRECT_TO_MASTER);
+      journey.scores[currentLetter] = Math.min(scoreFor(currentLetter) + 1, CORRECT_TO_UNLOCK);
     } else {
-      // A missed letter isn't durably known, even if it was mastered before —
-      // demote it one step so it has to be recalled correctly again rather
-      // than staying "mastered" forever from one earlier streak.
-      journey.scores[currentLetter] = wasMastered
-        ? Math.max(scoreFor(currentLetter) - 1, 0)
-        : scoreFor(currentLetter);
       if (!retryQueue.includes(currentLetter)) retryQueue.push(currentLetter);
     }
 
-    const nowMastered = isMastered(currentLetter);
-    // Journey mastery is tracked entirely in journey.scores (persisted via
-    // persist() below) — it deliberately does NOT also write into
-    // NorwegianProgress's self-reported `state.letters`, which is a
-    // separate, honest measure of what the child says they know (set only
-    // from the "I know this letter" button in js/alphabet.js). Keeping
-    // these two data stores independent is what lets the Progress page
-    // show them as two genuinely different numbers instead of one
-    // conflated one.
+    const nowRecognized = isRecognized(currentLetter);
+    // Earned recognition evidence is retained after a later mistake.
     const unlockedLetter = unlockIfReady();
     persist();
 
@@ -268,42 +269,40 @@ const JourneyPage = (() => {
     });
 
     const feedback = container.querySelector("#journey-feedback");
-    const soundHint = entry ? ` (sounds like "${entry.sound}")` : "";
+    const soundHint = entry ? ` (${entry.phoneme || entry.sound})` : "";
     if (isCorrect) {
       feedback.className = "feedback feedback-correct";
-      feedback.innerHTML = nowMastered && !wasMastered
-        ? `⭐ Flott! You mastered <strong>${currentLetter}</strong>${soundHint}.`
-        : `🎉 Riktig! That's <strong>${currentLetter}</strong>${soundHint}.`;
+      feedback.innerHTML = nowRecognized && !wasRecognized
+        ? `⭐ Du har kjent igjen <strong>${currentLetter}</strong> tre ganger!`
+        : `🎉 Riktig! Det er <strong>${currentLetter}</strong>${soundHint}.`;
     } else {
       feedback.className = "feedback feedback-incorrect";
-      feedback.innerHTML = `Ikke helt — it was <strong>${currentLetter}</strong>${soundHint}.`;
-      if (wasMastered && !nowMastered) {
-        feedback.insertAdjacentHTML(
-          "beforeend",
-          `<div class="journey-unlock">This one needs a bit more practice — we'll come back to it soon.</div>`
-        );
-      }
+      feedback.innerHTML = `Dette er <strong>${currentLetter}</strong>${soundHint}. Hør og prøv lyden selv.
+        ${window.SoundButton.html({ kind: "letter", value: currentLetter, label: "Hør igjen" })}`;
+      speakLetter(currentLetter);
     }
 
     if (unlockedLetter) {
       feedback.insertAdjacentHTML(
         "beforeend",
-        `<div class="journey-unlock">🔓 New letters unlocked: <strong>${unlockedLetter.join(", ")}</strong>!</div>`
+        `<div class="journey-unlock">🔓 Nye bokstaver: <strong>${unlockedLetter.join(", ")}</strong>!</div>`
       );
     }
 
     updateStatus(container);
+    container.querySelector("#journey-next").disabled = false;
+    session.complete(`question-${taskNumber}`, feedback);
   }
 
   function updateStatus(container) {
     const status = container.querySelector("#journey-status");
     const total = orderedLetters().length;
-    const masteredCount = journey.unlocked.filter(isMastered).length;
-    const masteredPercent = total > 0 ? (masteredCount / total) * 100 : 0;
+    const recognizedCount = journey.unlocked.filter(isRecognized).length;
+    const recognizedPercent = total > 0 ? (recognizedCount / total) * 100 : 0;
     if (status) {
       status.innerHTML = `
-        <div class="journey-counts">Letters in play: ${journey.unlocked.length} / ${total} · Mastered: ${masteredCount}</div>
-        <div class="progress-bar"><div class="progress-bar-fill" style="width:${masteredPercent}%"></div></div>
+        <div class="journey-counts">Bokstaver: ${journey.unlocked.length} / ${total} · Kjent igjen tre ganger: ${recognizedCount}</div>
+        <div class="progress-bar"><div class="progress-bar-fill" style="width:${recognizedPercent}%"></div></div>
       `;
     }
 
@@ -312,10 +311,10 @@ const JourneyPage = (() => {
     pool.innerHTML = "";
     journey.unlocked.forEach((letter) => {
       const chip = document.createElement("div");
-      chip.className = `journey-chip${isMastered(letter) ? " mastered" : ""}`;
+      chip.className = `journey-chip${isRecognized(letter) ? " mastered" : ""}`;
       chip.innerHTML = `
         <span class="journey-chip-letter">${letter}</span>
-        <span class="journey-chip-score">${scoreFor(letter)} / ${CORRECT_TO_MASTER}</span>
+        <span class="journey-chip-score">${scoreFor(letter)} / ${CORRECT_TO_UNLOCK}</span>
       `;
       pool.appendChild(chip);
     });
@@ -324,7 +323,7 @@ const JourneyPage = (() => {
     if (remaining.length > 0) {
       const locked = document.createElement("div");
       locked.className = "journey-chip locked";
-      locked.innerHTML = `<span class="journey-chip-letter">🔒</span><span class="journey-chip-score">${Math.min(UNLOCK_BATCH_SIZE, remaining.length)} next</span>`;
+      locked.innerHTML = `<span class="journey-chip-letter">🔒</span><span class="journey-chip-score">${Math.min(UNLOCK_BATCH_SIZE, remaining.length)} nye</span>`;
       pool.appendChild(locked);
     }
   }

@@ -18,14 +18,16 @@
  * listener can be attached twice and play a sound twice.
  *
  * `kind` decides how the value is spoken:
- *   letter     — the shared child-friendly letter cue (never the IPA symbol)
+ *   letter     — reviewed recording or approximate device letter cue
+ *   sound-unit — contextual word/index token from NorwegianAudio.soundUnits()
  *   word       — the text as a whole word/sentence
- *   sound-out  — each letter sound in turn, then the whole word
+ *   sound-out  — reviewed units then word; otherwise the whole word slowly
  */
 
 const SoundButton = (() => {
   const DEFAULT_ICONS = {
     letter: "🔊",
+    "sound-unit": "🔊",
     word: "🔊",
     "sound-out": "🧩"
   };
@@ -65,7 +67,18 @@ const SoundButton = (() => {
   function ariaLabelFor(config) {
     if (config.options.ariaLabel) return config.options.ariaLabel;
     if (config.kind === "letter") return `Play the sound of ${config.value}`;
-    if (config.kind === "sound-out") return `Sound out ${config.value}`;
+    if (config.kind === "sound-unit") {
+      const separator = config.value.lastIndexOf(":");
+      const word = config.value.slice(0, separator);
+      const index = Number(config.value.slice(separator + 1));
+      const unit = window.NorwegianAudio && window.NorwegianAudio.soundUnits(word)[index];
+      return unit ? `Hear ${unit.text} in ${unit.word}` : "Hear word sound";
+    }
+    if (config.kind === "sound-out") {
+      return window.NorwegianAudio && window.NorwegianAudio.canSoundOut(config.value)
+        ? `Hør lydene og så hele ordet: ${config.value}`
+        : `Hør hele ordet sakte: ${config.value}`;
+    }
     return config.label ? `${config.label}: ${config.value}` : `Play ${config.value}`;
   }
 
@@ -105,6 +118,7 @@ const SoundButton = (() => {
   function play(kind, value, options = {}) {
     if (!window.NorwegianAudio) return false;
     if (kind === "letter") return window.NorwegianAudio.speakLetter(value, options);
+    if (kind === "sound-unit") return window.NorwegianAudio.speakSoundUnit(value, options);
     if (kind === "sound-out") return window.NorwegianAudio.soundOutWord(value, options);
     return window.NorwegianAudio.speak(value, options);
   }

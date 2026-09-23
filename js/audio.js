@@ -1,81 +1,171 @@
 /**
- * Audio helper — wraps the Web Speech API SpeechSynthesis so the whole app
- * can "speak" Norwegian letters/words without needing pre-recorded audio files.
- * Falls back gracefully if speech synthesis is unavailable.
- *
- * Every module that plays a *letter sound* goes through `speakLetter()` here,
- * so a letter sounds the same everywhere in the app: the child-friendly cue
- * from the dataset (never the IPA symbol), with sustained cues like "mmm"
- * collapsed to a single clean "m", and a rate cap so a single phoneme isn't
- * rushed past a beginner.
- *
- * Playing several sounds in a row (sounding a word out) uses `speakSequence()`
- * rather than a chain of timers: each part starts only when the previous one
- * has actually finished, so nothing gets cut off by the cancel() that starts
- * the next utterance, and a new request cleanly replaces a running sequence
- * instead of interleaving with it.
+ * Shared Norwegian audio. Optional same-origin educator-reviewed recordings
+ * take priority; device speech is an approximation, never a reviewed phoneme.
+ * Word fragments fall back to their containing word, preserving context.
  */
-
 const NorwegianAudio = (() => {
-  /** A single phoneme read at full speed is hard to catch — cap letter sounds. */
   const LETTER_SOUND_MAX_RATE = 0.85;
-  /** Silence between the parts of a sequence, in ms. */
   const DEFAULT_GAP_MS = 220;
-
+  const timers = new Set();
   let cachedVoice = null;
   let voicesReady = false;
   let speakRequest = 0;
+  let stopActive = null;
 
-  function pickVoice() {
-    if (!("speechSynthesis" in window)) return null;
-    const voices = window.speechSynthesis.getVoices();
-    if (!voices || voices.length === 0) return null;
-    voicesReady = true;
-    return (
-      voices.find((v) => v.lang && v.lang.toLowerCase().startsWith("nb")) ||
-      voices.find((v) => v.lang && v.lang.toLowerCase().startsWith("no")) ||
-      voices.find((v) => v.lang && v.lang.toLowerCase().startsWith("nn")) ||
-      null
-    );
+  function synthesisSupported() {
+    return typeof window !== "undefined" &&
+      !!window.speechSynthesis &&
+      typeof window.SpeechSynthesisUtterance === "function";
   }
 
-  if (typeof window !== "undefined" && "speechSynthesis" in window) {
+  function pickVoice() {
+    if (!synthesisSupported()) return null;
+    const voices = window.speechSynthesis.getVoices() || [];
+    voicesReady = voices.length > 0;
+    return voices.find((v) => /^nb/i.test(v.lang)) ||
+      voices.find((v) => /^no/i.test(v.lang)) ||
+      voices.find((v) => /^nn/i.test(v.lang)) || null;
+  }
+
+  if (synthesisSupported()) {
     cachedVoice = pickVoice();
-    window.speechSynthesis.onvoiceschanged = () => {
-      cachedVoice = pickVoice();
-    };
+    const updateVoice = () => { cachedVoice = pickVoice(); };
+    if (window.speechSynthesis.addEventListener) {
+      window.speechSynthesis.addEventListener("voiceschanged", updateVoice);
+    } else {
+      window.speechSynthesis.onvoiceschanged = updateVoice;
+    }
+  }
+
+  function normalize(text) {
+    return String(text == null ? "" : text).trim().toLowerCase();
+  }
+
+  /** Accept explicit review metadata, not a bare URL or an unreviewed asset. */
+  function recordingFor(key) {
+    if (typeof window === "undefined") return null;
+    const registry = window.NORWEGIAN_RECORDINGS || {};
+    const entry = Object.prototype.hasOwnProperty.call(registry, key) ? registry[key] : null;
+    if (!entry || entry.reviewStatus !== "educator-reviewed" ||
+        entry.locale !== "nb-NO" ||
+        !["src", "reviewedBy", "dialect"].every(
+          (field) => typeof entry[field] === "string" && entry[field].trim()
+        ) ||
+        !/^\d{4}-\d{2}-\d{2}$/.test(entry.reviewedAt || "")) return null;
+    const date = new Date(`${entry.reviewedAt}T00:00:00Z`);
+    if (!Number.isFinite(date.getTime()) ||
+        date.toISOString().slice(0, 10) !== entry.reviewedAt) return null;
+    try {
+      const url = new URL(entry.src, window.location.href);
+      if (!/^https?:$/.test(url.protocol) || url.origin !== window.location.origin ||
+          url.username || url.password) return null;
+      return { ...entry, src: url.href };
+    } catch (_) {
+      return null;
+    }
   }
 
   function isSupported() {
-    return typeof window !== "undefined" && "speechSynthesis" in window;
+    return synthesisSupported() || (typeof window !== "undefined" &&
+      typeof window.Audio === "function" &&
+      Object.keys(window.NORWEGIAN_RECORDINGS || {}).some((key) => recordingFor(key)));
   }
 
-  /** The spoken cue for a letter: child-friendly, never an IPA symbol, never repeated. */
+  /** Plain spelling cues only: synthesis may still produce a letter name. */
   function letterSound(letter) {
-    const raw = String(letter || "").trim();
+    const raw = normalize(letter);
     if (!raw) return "";
     const entry = (window.NORWEGIAN_LETTERS || []).find(
-      (item) => item.letter.toLowerCase() === raw.toLowerCase()
+      (item) => normalize(item.letter) === raw
     );
-    const cue = ((entry && entry.spokenSound) || raw).trim().toLowerCase();
-    // Collapse sustained cues like "mmm"/"sss" to one clean sound.
+    const cue = normalize((entry && entry.spokenSound) || raw);
     const repeated = cue.match(/^(.)\1{2,}$/u);
     return repeated ? repeated[1] : cue;
   }
 
-  /** Stop anything currently speaking or queued. */
+  /**
+   * Curated spelling groups; an unknown word/phrase remains one whole unit.
+   * `value` is a context token for SoundButton's "sound-unit" kind.
+   */
+  function soundUnits(word) {
+    const text = normalize(word);
+    if (!text) return [];
+    const table = window.NORWEGIAN_WORD_SOUND_UNITS || {};
+    const curated = Object.prototype.hasOwnProperty.call(table, text) ? table[text] : null;
+    const units = Array.isArray(curated) && curated.length &&
+      curated.every((unit) => typeof unit === "string" && unit) &&
+      curated.join("") === text ? curated : [text];
+    return units.map((unit, index) => ({
+      text: unit, value: `${text}:${index}`, word: text, index
+    }));
+  }
+
+  function resolveUnit(value) {
+    const token = typeof value === "object" && value ? value.value : value;
+    const match = String(token || "").match(/^(.+):(\d+)$/u);
+    if (!match) return null;
+    return soundUnits(match[1])[Number(match[2])] || null;
+  }
+
+  function canSoundOut(word) {
+    const units = soundUnits(word);
+    return typeof window.Audio === "function" && units.length > 0 &&
+      units.every((unit) => !!recordingFor(`unit:${unit.value}`));
+  }
+
+  function later(callback, delay) {
+    const timer = window.setTimeout(() => {
+      timers.delete(timer);
+      callback();
+    }, delay);
+    timers.add(timer);
+    return timer;
+  }
+
+  function clearTimer(timer) {
+    window.clearTimeout(timer);
+    timers.delete(timer);
+  }
+
+  function stopSynthesis() {
+    if (synthesisSupported()) {
+      try { window.speechSynthesis.cancel(); } catch (_) { /* Browser shutdown. */ }
+    }
+  }
+
+  /** Cancellation never calls a superseded request's completion callback. */
   function cancel() {
     speakRequest += 1;
-    if (isSupported()) window.speechSynthesis.cancel();
+    timers.forEach((timer) => window.clearTimeout(timer));
+    timers.clear();
+    if (stopActive) stopActive();
+    stopActive = null;
+    stopSynthesis();
   }
 
   function defaultRate() {
     return (window.NorwegianSettings && window.NorwegianSettings.getAudioRate()) || 1;
   }
 
-  /** Rough upper bound on how long an utterance can take, used as an onend watchdog. */
+  function playbackRate(value) {
+    const rate = Number(value);
+    return Number.isFinite(rate) && rate > 0 ? Math.min(2, Math.max(0.3, rate)) : 1;
+  }
+
   function watchdogMs(text, rate) {
-    return Math.round((1200 + String(text).length * 180) / Math.max(rate, 0.3));
+    return Math.round((1800 + String(text).length * 250) / Math.max(rate, 0.3));
+  }
+
+  function describePart(part) {
+    if (part.soundUnit) {
+      const unit = resolveUnit(part.soundUnit);
+      return unit ? { text: unit.word, key: `unit:${unit.value}`, isSound: true } : null;
+    }
+    if (part.letter) {
+      return { text: letterSound(part.letter), key: `letter:${normalize(part.letter)}`, isSound: true };
+    }
+    const text = String(part.text || "").trim();
+    return text ? { text, key: `word:${normalize(text)}`, isSound: false } : null;
   }
 
   function playPart(parts, index, requestId, options) {
@@ -84,103 +174,150 @@ const NorwegianAudio = (() => {
       if (typeof options.onDone === "function") options.onDone();
       return;
     }
-
     const part = parts[index];
-    const isLetter = !!part.letter;
-    const text = isLetter ? letterSound(part.letter) : String(part.text || "");
-    if (!text) {
-      playPart(parts, index + 1, requestId, options);
+    const description = describePart(part);
+    const next = () => {
+      if (requestId !== speakRequest) return;
+      const gap = Number.isFinite(options.gapMs) ? Math.max(0, options.gapMs) : DEFAULT_GAP_MS;
+      later(() => playPart(parts, index + 1, requestId, options),
+        index + 1 < parts.length ? gap : 0);
+    };
+    if (!description || !description.text) {
+      next();
       return;
     }
+    const { text, key, isSound } = description;
+    let rate = playbackRate(part.rate || options.rate || defaultRate());
+    if (isSound) rate = Math.min(rate, LETTER_SOUND_MAX_RATE);
 
-    let rate = part.rate || options.rate || defaultRate();
-    if (isLetter) rate = Math.min(rate, LETTER_SOUND_MAX_RATE);
-
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.lang = "nb-NO";
-    utterance.rate = rate;
-    if (cachedVoice) utterance.voice = cachedVoice;
-
-    let advanced = false;
-    const next = () => {
-      if (advanced || requestId !== speakRequest) return;
-      advanced = true;
-      window.clearTimeout(watchdog);
-      if (index + 1 >= parts.length) {
-        playPart(parts, index + 1, requestId, options);
+    const reportError = (error) => {
+      if (requestId === speakRequest && typeof options.onError === "function") options.onError(error);
+    };
+    const synthesize = () => {
+      if (requestId !== speakRequest) return;
+      if (!synthesisSupported()) {
+        next();
+        reportError(new Error("No speech fallback is available."));
         return;
       }
-      const gap = typeof options.gapMs === "number" ? options.gapMs : DEFAULT_GAP_MS;
-      window.setTimeout(() => playPart(parts, index + 1, requestId, options), gap);
+      let utterance;
+      let watchdog;
+      let finished = false;
+      const cleanup = () => {
+        clearTimer(watchdog);
+        if (utterance) utterance.onend = utterance.onerror = null;
+      };
+      const finish = (error, timedOut = false) => {
+        if (finished || requestId !== speakRequest) return;
+        finished = true;
+        cleanup();
+        stopActive = null;
+        if (timedOut) stopSynthesis();
+        next();
+        if (error) reportError(error);
+      };
+      stopActive = () => { finished = true; cleanup(); };
+      try {
+        utterance = new window.SpeechSynthesisUtterance(text);
+        utterance.lang = "nb-NO";
+        utterance.rate = rate;
+        if (cachedVoice) utterance.voice = cachedVoice;
+        utterance.onend = () => finish();
+        utterance.onerror = () => finish(new Error("Speech playback failed."));
+        watchdog = later(() => finish(new Error("Speech playback timed out."), true), watchdogMs(text, rate));
+        window.speechSynthesis.speak(utterance);
+      } catch (error) {
+        finish(error, true);
+      }
     };
 
-    // Some browsers never fire onend (notably when a voice is missing) — the
-    // watchdog keeps a sequence from stalling halfway through a word.
-    const watchdog = window.setTimeout(next, watchdogMs(text, rate));
-    utterance.onend = next;
-    utterance.onerror = next;
-
-    window.speechSynthesis.speak(utterance);
+    const recording = recordingFor(key) ||
+      (part.soundUnit ? recordingFor(`word:${normalize(text)}`) : null);
+    if (!recording || typeof window.Audio !== "function") {
+      synthesize();
+      return;
+    }
+    let audio;
+    let watchdog;
+    let settled = false;
+    const cleanup = () => {
+      clearTimer(watchdog);
+      if (!audio) return;
+      audio.onended = audio.onerror = null;
+      try {
+        audio.pause();
+        audio.removeAttribute("src");
+        audio.load();
+      } catch (_) { /* Already unloaded by the browser. */ }
+    };
+    const finishRecording = (failed) => {
+      if (settled || requestId !== speakRequest) return;
+      settled = true;
+      cleanup();
+      stopActive = null;
+      if (failed) synthesize();
+      else next();
+    };
+    stopActive = () => { settled = true; cleanup(); };
+    try {
+      audio = new window.Audio();
+      audio.preload = "auto";
+      audio.playbackRate = rate;
+      audio.onended = () => finishRecording(false);
+      audio.onerror = () => finishRecording(true);
+      // Bound both a hung load and a missing ended event; no overlap on timeout.
+      watchdog = later(() => finishRecording(true), Math.max(12000, watchdogMs(text, rate)));
+      audio.src = recording.src;
+      const playing = audio.play();
+      if (playing && typeof playing.catch === "function") playing.catch(() => finishRecording(true));
+    } catch (_) {
+      finishRecording(true);
+    }
   }
 
   /**
-   * Speak one or more parts in order, replacing anything already speaking.
-   * @param {Array<{text?: string, letter?: string, rate?: number}>} parts
-   * @param {{rate?: number, gapMs?: number, onDone?: function}} [options]
-   * @returns {boolean} whether the request was accepted
+   * Existing letter/text parts remain supported; soundUnit adds context tokens.
+   * onDone runs once after completion (including errors), never after cancel.
+   * onError reports an unavailable/failed speech fallback; failed recordings
+   * automatically try synthesis without advancing twice.
    */
   function speakSequence(parts, options = {}) {
-    const list = (parts || []).filter(Boolean);
-    if (list.length === 0 || !isSupported()) return false;
-    const requestId = ++speakRequest;
-    window.speechSynthesis.cancel();
-    // Queue on the next macrotask so cancel() can settle first.
-    window.setTimeout(() => playPart(list, 0, requestId, options), 0);
+    const list = Array.isArray(parts) ? parts.filter(Boolean) : [];
+    if (!list.length || !isSupported()) return false;
+    cancel();
+    const requestId = speakRequest;
+    later(() => playPart(list, 0, requestId, options), 0);
     return true;
   }
 
-  /**
-   * Speak the given text aloud, replacing anything already speaking.
-   * @param {string} text
-   * @param {{rate?: number, onDone?: function}} [options]
-   * @returns {boolean} whether the request was accepted; it may still be superseded
-   */
   function speak(text, options = {}) {
     if (!text) return false;
     return speakSequence([{ text }], options);
   }
 
-  /** Speak a single letter's sound — the one way the app pronounces letters. */
   function speakLetter(letter, options = {}) {
+    if (!letterSound(letter)) return false;
     return speakSequence([{ letter }], options);
   }
 
-  /**
-   * Model blending: each letter sound in turn, then the whole word.
-   * @param {string} word
-   * @param {{onDone?: function}} [options]
-   */
+  function speakSoundUnit(value, options = {}) {
+    if (!resolveUnit(value)) return false;
+    return speakSequence([{ soundUnit: value }], options);
+  }
+
   function soundOutWord(word, options = {}) {
     const text = String(word || "").trim();
-    if (!text) return false;
-    const parts = text
-      .split("")
-      .filter((char) => /[a-zæøå]/i.test(char))
-      .map((char) => ({ letter: char }));
-    if (parts.length === 0) return false;
-    parts.push({ text, rate: Math.min(defaultRate(), LETTER_SOUND_MAX_RATE) });
-    return speakSequence(parts, { gapMs: 320, onDone: options.onDone });
+    const units = soundUnits(text);
+    if (!units.length) return false;
+    // Do not repeat a synthesized whole word for every missing unit recording.
+    const parts = canSoundOut(text) ? units.map((unit) => ({ soundUnit: unit.value })) : [];
+    parts.push({ text, rate: Math.min(playbackRate(options.rate || defaultRate()), LETTER_SOUND_MAX_RATE) });
+    return speakSequence(parts, { ...options, gapMs: options.gapMs == null ? 320 : options.gapMs });
   }
 
   return {
-    speak,
-    speakLetter,
-    speakSequence,
-    soundOutWord,
-    letterSound,
-    cancel,
-    isSupported,
-    voicesReady: () => voicesReady
+    speak, speakLetter, speakSoundUnit, speakSequence, soundOutWord, soundUnits, canSoundOut,
+    letterSound, cancel, isSupported, voicesReady: () => voicesReady
   };
 })();
 

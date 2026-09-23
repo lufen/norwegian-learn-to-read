@@ -19,18 +19,29 @@ const WritingPage = (() => {
   let solved = false;
   let wrongAttemptsOnSlot = 0;
   let introSpoken = false;
+  let session = null;
+  let usedHelp = false;
 
   function render(container) {
     const saved = window.NorwegianProgress.getActivityState("writing");
-    currentLevelIndex = Number.isInteger(saved.levelIndex) ? saved.levelIndex : currentLevelIndex;
-    currentWordIndex = Number.isInteger(saved.wordIndex) ? saved.wordIndex : currentWordIndex;
+    currentLevelIndex = Number.isInteger(saved.levelIndex) ? saved.levelIndex : 1;
+    currentWordIndex = Number.isInteger(saved.wordIndex) ? saved.wordIndex : 0;
     const level = window.WORD_LEVELS[currentLevelIndex] || window.WORD_LEVELS[1];
     currentLevelIndex = window.WORD_LEVELS.indexOf(level);
     currentWordIndex = Math.max(0, Math.min(currentWordIndex, level.words.length - 1));
+    session = window.PracticeSession.begin("writing", container, () => render(container), {
+      scopeKey: currentLevelIndex,
+      target: Math.min(5, new Set(level.words.map((word) => word.text)).size)
+    });
     savePosition();
 
     const word = level.words[currentWordIndex];
+    usedHelp = false;
     setupAttempt(word);
+    const state = window.NorwegianProgress.getActivityState("writing");
+    window.NorwegianProgress.saveActivityState("writing", {
+      ...state, practiced: { ...state.practiced, [word.text]: true }
+    });
 
     container.innerHTML = "";
 
@@ -38,7 +49,8 @@ const WritingPage = (() => {
     heading.className = "page-header";
     heading.innerHTML = `
       <h2>Skriv Ord — Write Words</h2>
-      <p>Listen to the word, then tap the letters in order to build it.</p>
+      <p>Hør ordet. Trykk på bokstavene i riktig rekkefølge.</p>
+      ${window.SoundButton.html({ kind: "word", value: "Hør ordet. Trykk på bokstavene i riktig rekkefølge.", label: "Hør oppgaven" })}
     `;
     container.appendChild(heading);
 
@@ -50,6 +62,8 @@ const WritingPage = (() => {
       btn.className = "btn btn-level" + (idx === currentLevelIndex ? " active" : "");
       btn.textContent = lvl.name;
       btn.addEventListener("click", () => {
+        if (!btn.isConnected || !session.active()) return;
+        window.NorwegianAudio.cancel();
         currentLevelIndex = idx;
         currentWordIndex = 0;
         savePosition();
@@ -65,32 +79,40 @@ const WritingPage = (() => {
       <div class="word-emoji" aria-hidden="true">${word.emoji || "📝"}</div>
       ${window.Curriculum ? window.Curriculum.newLetterBadge(word.text) : ""}
       <div class="detail-actions">
-        ${window.SoundButton.html({ kind: "word", value: word.text, label: "Play word" })}
-        ${window.SoundButton.html({ kind: "word", value: word.text, label: "Play slowly", icon: "🐢", variant: "secondary", rate: 0.6, ariaLabel: `Play ${word.text} slowly` })}
+        ${window.SoundButton.html({ kind: "word", value: word.text, label: "Hør ordet" })}
+        ${window.SoundButton.html({ kind: "word", value: word.text, label: "Hør sakte", icon: "🐢", variant: "secondary", rate: 0.6, id: "build-slow", ariaLabel: `Hør ${word.text} sakte` })}
       </div>
       <div class="build-slots" id="build-slots" aria-live="polite"></div>
       <div class="build-bank" id="build-bank"></div>
       <div class="detail-actions">
-        <button type="button" class="btn btn-outline" id="clear-attempt">🔄 Clear and try again</button>
+        <button type="button" class="btn btn-outline" id="clear-attempt">🔄 Prøv igjen</button>
       </div>
       <div class="feedback" id="feedback" aria-live="polite"></div>
       <div class="nav-buttons">
-        <button type="button" class="btn btn-outline" id="prev-word">⟵ Previous</button>
-        <button type="button" class="btn btn-outline" id="next-word">Next ⟶</button>
+        <button type="button" class="btn btn-outline" id="prev-word">⟵ Forrige</button>
+        <button type="button" class="btn btn-outline" id="next-word">Neste ⟶</button>
       </div>
     `;
     container.appendChild(card);
+    session.attach();
+    const active = window.PracticeSession.scope(container);
 
+    card.querySelector("#build-slow").addEventListener("click", () => {
+      if (active() && !solved) usedHelp = true;
+    });
     card.querySelector("#clear-attempt").addEventListener("click", () => {
+      if (!active() || solved) return;
       setupAttempt(word);
       renderSlotsAndBank(card, word);
     });
     card.querySelector("#prev-word").addEventListener("click", () => {
+      if (!active()) return;
       currentWordIndex = (currentWordIndex - 1 + level.words.length) % level.words.length;
       savePosition();
       render(container);
     });
     card.querySelector("#next-word").addEventListener("click", () => {
+      if (!active()) return;
       currentWordIndex = (currentWordIndex + 1) % level.words.length;
       savePosition();
       render(container);
@@ -106,6 +128,7 @@ const WritingPage = (() => {
 
   function savePosition() {
     window.NorwegianProgress.saveActivityState("writing", {
+      ...window.NorwegianProgress.getActivityState("writing"),
       levelIndex: currentLevelIndex,
       wordIndex: currentWordIndex
     });
@@ -147,7 +170,9 @@ const WritingPage = (() => {
       .join("");
 
     bankEl.querySelectorAll(".build-tile").forEach((btn) => {
-      btn.addEventListener("click", () => handleTileTap(btn.dataset.tileId, card, word));
+      btn.addEventListener("click", () => {
+        if (btn.isConnected && session.active()) handleTileTap(btn.dataset.tileId, card, word);
+      });
     });
 
     if (!solved) {
@@ -175,19 +200,29 @@ const WritingPage = (() => {
       if (slots.every((slot) => slot.filled)) {
         solved = true;
         feedback.className = "feedback feedback-correct";
-        feedback.innerHTML = "🎉 Riktig! You built the word!";
-        window.NorwegianProgress.markWordMastered(word.text.trim().toLowerCase());
+        feedback.textContent = usedHelp ? "🎉 Du bygde ordet med ekstra hjelp!" : "🎉 Du bygde ordet!";
+        card.querySelector("#clear-attempt").disabled = true;
+        if (!session.has(word.text)) {
+          const state = window.NorwegianProgress.getActivityState("writing");
+          const evidence = { ...(state.completed || {}) };
+          const previous = evidence[word.text] || { withHelp: 0, withoutExtraHelp: 0 };
+          const field = usedHelp ? "withHelp" : "withoutExtraHelp";
+          evidence[word.text] = { ...previous, [field]: (previous[field] || 0) + 1 };
+          window.NorwegianProgress.saveActivityState("writing", { ...state, completed: evidence });
+          session.complete(word.text);
+        }
       }
     } else {
       wrongAttemptsOnSlot += 1;
+      usedHelp = true;
       feedback.className = "feedback feedback-incorrect";
       if (wrongAttemptsOnSlot >= 2) {
         // Re-teach instead of just saying "wrong" again: say the sound the
         // child needs next so a stuck attempt doesn't turn into guessing.
-        feedback.textContent = "Listen: that's the sound you need next.";
+        feedback.innerHTML = `Hør lyden du trenger nå. ${window.SoundButton.html({ kind: "letter", value: expected, label: "Hør igjen" })}`;
         window.SoundButton.play("letter", expected);
       } else {
-        feedback.textContent = "Not that one — listen again and try another letter.";
+        feedback.textContent = "Prøv en annen bokstav. Du kan høre ordet igjen.";
       }
     }
   }

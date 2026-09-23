@@ -3,7 +3,7 @@
  */
 
 const App = (() => {
-  const VALID_PAGES = ["home", "alphabet", "journey", "reading", "spelling", "handwriting", "writing", "progress"];
+  const VALID_PAGES = ["home", "alphabet", "journey", "reading", "spelling", "handwriting", "writing", "progress", "challenges"];
 
   // Spoken labels for each destination so a non-reading child hears where a
   // tap is taking them, both from the home tiles and the top nav links.
@@ -15,7 +15,8 @@ const App = (() => {
     spelling: "Stave ord",
     handwriting: "Skriv bokstaven",
     writing: "Skriv ord",
-    progress: "Min fremgang"
+    progress: "For voksne. Oversikt over øvingen",
+    challenges: "Lek med lyder og bilder"
   };
 
   function getRenderer(pageName) {
@@ -34,6 +35,8 @@ const App = (() => {
         return (container) => window.WritingPage.render(container);
       case "progress":
         return (container) => window.ProgressPage.render(container);
+      case "challenges":
+        return (container) => window.ChallengesPage.render(container);
       case "home":
       default:
         return renderHome;
@@ -45,48 +48,96 @@ const App = (() => {
     const heading = document.createElement("div");
     heading.className = "page-header home-header";
     heading.innerHTML = `
-      <h2>Velkommen! Welcome!</h2>
-      <p>Learn to read and write Norwegian, one letter and word at a time.</p>
+      <h2>Hei! Skal vi leke?</h2>
+      <p>Velg et bilde. Vi øver litt sammen.</p>
+      ${window.SoundButton.html({ kind: "word", value: "Trykk på fortsett for å leke videre. Du kan også velge en annen lek.", label: "Hør hjelpen" })}
     `;
     container.appendChild(heading);
 
+    const savedPage = window.NorwegianProgress.getActivityState("navigation").page;
+    const resumePage = VALID_PAGES.includes(savedPage) && !["home", "progress"].includes(savedPage) ? savedPage : "journey";
+    const primary = document.createElement("div");
+    primary.className = "home-menu";
+    primary.innerHTML = `
+      <button type="button" class="home-tile home-tile-primary" data-page="${resumePage}">
+        <span class="home-tile-icon" aria-hidden="true">▶️</span>
+        <span>Fortsett å leke</span><small>${PAGE_SPOKEN_LABELS[resumePage]}</small>
+      </button>
+      <button type="button" class="home-tile" data-page="challenges">
+        <span class="home-tile-icon" aria-hidden="true">🎲</span><span>Lek med lyder og bilder</span>
+      </button>`;
+    container.appendChild(primary);
+
+    const choices = document.createElement("details");
+    choices.className = "home-activities";
+    choices.innerHTML = "<summary>🧸 Velg en annen lek</summary>";
+    container.appendChild(choices);
     const menu = document.createElement("div");
     menu.className = "home-menu";
     menu.innerHTML = `
       <button type="button" class="home-tile" data-page="alphabet">
         <span class="home-tile-icon">🔤</span>
-        <span>Letters &amp; Sounds</span>
+        <span>Bokstaver og lyder</span>
       </button>
       <button type="button" class="home-tile" data-page="journey">
         <span class="home-tile-icon">🚀</span>
-        <span>Letter Journey</span>
+        <span>Bokstavreisen</span>
       </button>
       <button type="button" class="home-tile home-tile-primary" data-page="handwriting">
         <span class="home-tile-icon">✍️</span>
-        <span>Write Letters</span>
+        <span>Skriv bokstaver</span>
       </button>
       <button type="button" class="home-tile home-tile-primary" data-page="reading">
         <span class="home-tile-icon">📖</span>
-        <span>Read a Little Book</span>
+        <span>Les en liten bok</span>
       </button>
       <button type="button" class="home-tile" data-page="spelling">
         <span class="home-tile-icon">🧩</span>
-        <span>Spell Words</span>
+        <span>Lytt til ord</span>
       </button>
       <button type="button" class="home-tile" data-page="writing">
         <span class="home-tile-icon">📝</span>
-        <span>Write Words</span>
-      </button>
-      <button type="button" class="home-tile" data-page="progress">
-        <span class="home-tile-icon">⭐</span>
-        <span>My Progress</span>
+        <span>Bygg ord</span>
       </button>
     `;
-    container.appendChild(menu);
+    choices.appendChild(menu);
 
-    menu.querySelectorAll("[data-page]").forEach((btn) => {
+    container.querySelectorAll("[data-page]").forEach((btn) => {
       btn.addEventListener("click", () => navigate(btn.dataset.page));
     });
+    const recommendation = window.Curriculum.recommendations();
+    const suggested = document.createElement("section");
+    suggested.className = "home-recommendations";
+    if (recommendation.word || recommendation.bookIndex >= 0) {
+      suggested.innerHTML = "<h3>🌱 Prøv med bokstaver du har øvd på</h3>";
+      if (recommendation.word) {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "btn btn-secondary";
+        button.textContent = `${recommendation.word.emoji || "🧩"} Bygg ${recommendation.word.text}`;
+        button.addEventListener("click", () => {
+          const saved = window.NorwegianProgress.getActivityState("writing");
+          window.NorwegianProgress.saveActivityState("writing", {
+            ...saved, levelIndex: recommendation.word.levelIndex, wordIndex: recommendation.word.wordIndex
+          });
+          navigate("writing");
+        });
+        suggested.appendChild(button);
+      }
+      if (recommendation.bookIndex >= 0) {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "btn btn-secondary";
+        button.textContent = "📖 Les en bok med kjente bokstaver";
+        button.addEventListener("click", () => {
+          const saved = window.NorwegianProgress.getActivityState("reading");
+          window.NorwegianProgress.saveActivityState("reading", { ...saved, bookIndex: recommendation.bookIndex, pageIndex: 0 });
+          navigate("reading");
+        });
+        suggested.appendChild(button);
+      }
+      container.appendChild(suggested);
+    }
   }
 
   let currentPage = "home";
@@ -94,7 +145,14 @@ const App = (() => {
   function navigate(pageName) {
     const container = document.getElementById("page-container");
     const normalizedPage = VALID_PAGES.includes(pageName) ? pageName : "home";
+    if (window.PracticeSession) window.PracticeSession.invalidate();
+    container.dataset.page = normalizedPage;
     currentPage = normalizedPage;
+    if (!["home", "progress"].includes(normalizedPage)) {
+      window.NorwegianProgress.saveActivityState("navigation", { page: normalizedPage });
+    }
+    document.getElementById("settings-container").classList.remove("open");
+    document.getElementById("settings-toggle").setAttribute("aria-expanded", "false");
     if (window.NorwegianAudio) {
       // Never let a letter sound (or a sound-it-out sequence) from the page
       // being left keep playing over the new one.
@@ -118,7 +176,7 @@ const App = (() => {
     if (!btn || !window.NorwegianProfiles) return;
     const active = window.NorwegianProfiles.getActive();
     btn.textContent = active.avatar;
-    btn.setAttribute("aria-label", `Switch player (currently ${active.name})`);
+    btn.setAttribute("aria-label", `Bytt spiller (${active.name})`);
   }
 
   /** Big icon-driven overlay to pick or add a child profile — no reading required to use it. */
@@ -131,11 +189,11 @@ const App = (() => {
     overlay.className = "child-confirm-overlay";
     overlay.innerHTML = `
       <div class="child-confirm-card profile-switch-card">
-        <p class="child-confirm-message">Hvem spiller? — Who's playing?</p>
+        <p class="child-confirm-message">Hvem spiller?</p>
         <div class="profile-list" id="profile-list"></div>
         <div class="detail-actions">
-          <button type="button" class="btn btn-secondary" id="profile-add">➕ New player</button>
-          <button type="button" class="btn btn-outline" id="profile-close">Close</button>
+          <button type="button" class="btn btn-secondary" id="profile-add">➕ Ny spiller</button>
+          <button type="button" class="btn btn-outline" id="profile-close">Lukk</button>
         </div>
       </div>
     `;
@@ -172,7 +230,7 @@ const App = (() => {
     function showAvatarPicker() {
       const card = overlay.querySelector(".profile-switch-card");
       card.innerHTML = `
-        <p class="child-confirm-message">Velg et bilde — Pick a picture!</p>
+        <p class="child-confirm-message">Velg et bilde!</p>
         <div class="profile-list" id="avatar-list">
           ${window.NorwegianProfiles.AVATARS.map((avatar) => `
             <button type="button" class="profile-chip" data-avatar="${avatar}">
@@ -181,7 +239,7 @@ const App = (() => {
           `).join("")}
         </div>
         <div class="detail-actions">
-          <button type="button" class="btn btn-outline" id="avatar-back">↩️ Back</button>
+          <button type="button" class="btn btn-outline" id="avatar-back">↩️ Tilbake</button>
         </div>
       `;
       if (window.NorwegianAudio) window.NorwegianAudio.speak("Velg et bilde.");
@@ -225,10 +283,10 @@ const App = (() => {
     breakReminderShown = true;
     window.ChildConfirm.show({
       icon: "⏰",
-      message: "You've been playing a while. Time for a little break?",
+      message: "Vil du ta en liten pause?",
       spokenMessage: "Du har spilt en stund. Er det på tide med en liten pause?",
-      confirmLabel: "😴 Take a break",
-      cancelLabel: "▶️ 5 more minutes",
+      confirmLabel: "😴 Ta en pause",
+      cancelLabel: "▶️ Lek videre",
       onConfirm: () => navigate("home"),
       onCancel: () => resetSessionPacing()
     });
@@ -251,7 +309,8 @@ const App = (() => {
     const settingsToggle = document.getElementById("settings-toggle");
     const settingsPanelWrap = document.getElementById("settings-container");
     settingsToggle.addEventListener("click", () => {
-      settingsPanelWrap.classList.toggle("open");
+      const open = settingsPanelWrap.classList.toggle("open");
+      settingsToggle.setAttribute("aria-expanded", String(open));
     });
 
     const profileToggle = document.getElementById("profile-toggle");
