@@ -17,7 +17,7 @@ window.PracticeSession = (() => {
   }
 
   function begin(activity, container, onContinue) {
-    if (current && current.activity === activity && current.active()) {
+    if (current && current.activity === activity && current.active(true)) {
       current.onContinue = onContinue;
       return current;
     }
@@ -31,8 +31,9 @@ window.PracticeSession = (() => {
     const session = {
       activity,
       onContinue,
-      active: () => current === session && visit === navigation && page === container.dataset.page &&
-        epoch() === started && bar.isConnected && container.contains(bar),
+      active: (includeCompleted = false) => current === session && visit === navigation &&
+        page === container.dataset.page && epoch() === started && bar.isConnected &&
+        container.contains(bar) && (includeCompleted || completed.size < 5),
       has: (key) => completed.has(String(key)),
       attach() {
         container.appendChild(bar);
@@ -43,7 +44,6 @@ window.PracticeSession = (() => {
         completed.add(String(key));
         draw();
         if (completed.size === 5) {
-          Array.from(container.children).forEach((child) => { if (child !== bar) child.hidden = true; });
           if (feedback) bar.prepend(feedback);
           bar.querySelector("h3").focus();
         }
@@ -52,6 +52,9 @@ window.PracticeSession = (() => {
     };
     function draw() {
       const done = completed.size === 5;
+      if (done) {
+        Array.from(container.children).forEach((child) => { if (child !== bar) child.hidden = true; });
+      }
       bar.innerHTML = `
         <p role="status" aria-label="${completed.size} av 5 oppgaver">
           <span aria-hidden="true">${Array.from({ length: 5 }, (_, i) => i < completed.size ? "●" : "○").join(" ")}</span>
@@ -63,13 +66,13 @@ window.PracticeSession = (() => {
           <button type="button" class="btn" data-session-continue>Øv mer</button>` : "<p>Fem oppgaver, så en pause.</p>"}
         <button type="button" class="btn btn-outline" data-session-stop>🏠 Ta en pause</button>`;
       bar.querySelector("[data-session-stop]").addEventListener("click", () => {
-        if (!session.active()) return;
+        if (!session.active(true)) return;
         window.NorwegianAudio.cancel();
         if (window.App) window.App.navigate("home");
       });
       const next = bar.querySelector("[data-session-continue]");
       if (next) next.addEventListener("click", () => {
-        if (!session.active()) return;
+        if (!session.active(true)) return;
         current = null;
         session.onContinue();
       });

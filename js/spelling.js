@@ -60,6 +60,7 @@ const SpellingPage = (() => {
       ${window.Curriculum ? window.Curriculum.newLetterBadge(word.text) : ""}
       <div class="word-syllables" id="word-syllables"></div>
       <p class="word-translation">${word.translation}</p>
+      <p class="hint">Lydbitene viser hvilke bokstaver som hører sammen. Uten lærerkontrollerte lydopptak hører du hele ordet. Enhetsstemmen kan si bokstavnavn.</p>
       <div class="detail-actions">
         ${window.SoundButton.html({ kind: "word", value: word.text, label: "Hør ordet" })}
         <button type="button" class="btn btn-secondary" id="mark-word-mastered" ${session.has(word.text) ? "disabled" : ""}>

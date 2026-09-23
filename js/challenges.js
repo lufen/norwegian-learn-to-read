@@ -8,7 +8,7 @@ const ChallengesPage = (() => {
     { id: "rhyme", icon: "🏡", title: "Finn rimvennen", instruction: "Lytt til ordet. Velg bildet som rimer." },
     { id: "syllables", icon: "🪨", title: "Klapp og tell", instruction: "Si ordet og klapp stavelsene. Velg hvor mange klapp." },
     { id: "letters", icon: "🔤", title: "Bokstavvenner", instruction: "Se på den store bokstaven. Finn den lille vennen." },
-    { id: "story", icon: "🌱", title: "Bilder i rekkefølge", instruction: "Hva skjer først? Trykk på bildene i rekkefølge." }
+    { id: "story", icon: "🌱", title: "Bilder i rekkefølge", instruction: "Lytt til historien. Hva skjer først? Trykk på bildene i rekkefølge." }
   ];
   const PICTURES = [
     { id: "sol", picture: "☀️", name: "sol", first: "S", syllables: ["sol"] },
@@ -71,9 +71,9 @@ const ChallengesPage = (() => {
     return node;
   }
 
-  function listen(value, label = "Lytt", kind = "word") {
+  function listen(value, label = "Lytt", kind = "word", variant = "outline") {
     return window.SoundButton.create({
-      kind, value, label, variant: "outline",
+      kind, value, label, variant,
       ariaLabel: `${label}: ${value}`
     });
   }
@@ -174,6 +174,7 @@ const ChallengesPage = (() => {
       const steps = (harder ? story : [story[0], story[2]]).map((step, i) => ({ ...step, id: String(i) }));
       question = {
         id: `story-${index % STORIES.length}`, order: steps.map((step) => step.id),
+        story: steps.map((step) => step.name).join(" "),
         choices: shuffle(steps), hint: `Først: ${steps[0].name}`
       };
     }
@@ -283,6 +284,11 @@ const ChallengesPage = (() => {
       root.append(dots);
       const card = element("section", "reading-card");
       card.setAttribute("aria-label", `Runde ${completed + 1}`);
+      if (round.story) {
+        const narration = element("div", "word-card");
+        narration.append(listen(round.story, "Hør historien", "word", "primary"));
+        card.append(narration);
+      }
       const target = element("div", "word-card");
       if (round.target) {
         if (mode.id === "letters") {
@@ -293,7 +299,7 @@ const ChallengesPage = (() => {
           picture.setAttribute("aria-label", round.target);
           target.append(picture);
         }
-        target.append(listen(round.target, mode.id === "sound" ? "Hør lyden" : "Hør igjen", round.kind));
+        target.append(listen(round.target, mode.id === "sound" ? "Hør lyden" : "Hør igjen", round.kind, "primary"));
         card.append(target);
       }
       if (mode.id === "sound") {
