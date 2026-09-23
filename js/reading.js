@@ -88,6 +88,13 @@ const ReadingPage = (() => {
       ? "Hør lydene" : "Hør ordet sakte";
   }
 
+  function restartCompletedPass(book) {
+    if (!bookPasses[book.id].counted) return false;
+    bookPasses[book.id] = { completedPages: [], counted: false };
+    pageIndex = 0;
+    return true;
+  }
+
   function recordAttempt(word, correct, usedHelp, countsAsReading) {
     if (!correct) return;
     const entry = wordStats[word] || { independent: 0, withHelp: 0, recognizedOnly: 0 };
@@ -103,13 +110,15 @@ const ReadingPage = (() => {
   }
 
   function render(container) {
-    if (!viewActive()) {
+    const entering = !viewActive();
+    if (entering) {
       question = null;
       showingSummary = false;
       questionNumber = 0;
     }
     loadState();
     const book = window.DECODABLE_BOOKS[bookIndex];
+    if (entering && restartCompletedPass(book)) saveState();
     const page = book.pages[pageIndex];
     const isLastPage = pageIndex === book.pages.length - 1;
 
@@ -188,6 +197,7 @@ const ReadingPage = (() => {
         if (!active()) return;
         bookIndex = Number(button.dataset.book);
         pageIndex = 0;
+        restartCompletedPass(window.DECODABLE_BOOKS[bookIndex]);
         question = null;
         showingSummary = false;
         saveState();
@@ -332,6 +342,7 @@ const ReadingPage = (() => {
       const hasNextBook = bookIndex + 1 < window.DECODABLE_BOOKS.length;
       bookIndex = hasNextBook ? bookIndex + 1 : bookIndex;
       pageIndex = 0;
+      restartCompletedPass(window.DECODABLE_BOOKS[bookIndex]);
       question = null;
       showingSummary = false;
       saveState();

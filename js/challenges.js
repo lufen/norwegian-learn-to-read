@@ -399,6 +399,7 @@ const ChallengesPage = (() => {
           answer.disabled = true;
           if (mode.id === "story") {
             round.selected.push(choice.id);
+            if (choice.id !== round.order[round.selected.length - 1]) markAssisted();
             sequence.textContent = "Din rekkefølge: " + round.selected.map((id) =>
               round.choices.find((item) => item.id === id).picture).join(" → ");
             answer.setAttribute("aria-label", `${choice.name} Valgt som bilde ${round.selected.length}.`);
