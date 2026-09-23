@@ -48,18 +48,52 @@ const Curriculum = (() => {
     const scores = window.NorwegianProgress.getJourney().scores;
     const ready = (text) => requiredLettersFor(text).every((letter) => scores[letter] >= 1)
       && patternsIn(text).length === 0;
-    let word = null;
-    window.WORD_LEVELS.slice(1).some((level, offset) => {
-      const wordIndex = level.words.findIndex((item) => ready(item.text));
-      if (wordIndex < 0) return false;
-      word = { levelIndex: offset + 1, wordIndex, ...level.words[wordIndex] };
-      return true;
-    });
+    const history = window.NorwegianProgress.getActivityState("recommendations");
+    const writing = window.NorwegianProgress.getActivityState("writing");
+    const spelling = window.NorwegianProgress.getActivityState("spelling");
     const reading = window.NorwegianProgress.getActivityState("reading");
+    const count = (value) => Number.isSafeInteger(value) && value >= 0 ? value : 0;
+    const choose = (kind, candidates) => {
+      if (!candidates.length) return null;
+      const saved = history[kind] || {};
+      const shown = { ...saved.shown };
+      const turn = count(saved.turn);
+      // Alternate new practice and revisiting, without repeating the last suggestion.
+      const fresh = candidates.filter((item) => !item.practiced);
+      const revisits = candidates.filter((item) => item.practiced);
+      let pool = turn % 2 === 0 ? fresh : revisits;
+      if (!pool.length) pool = candidates;
+      const alternatives = pool.filter((item) => item.key !== saved.last);
+      if (alternatives.length) pool = alternatives;
+      else if (candidates.length > 1) pool = candidates.filter((item) => item.key !== saved.last);
+      const selected = pool.slice().sort((a, b) => count(shown[a.key]) - count(shown[b.key]))[0];
+      shown[selected.key] = count(shown[selected.key]) + 1;
+      history[kind] = { shown, last: selected.key, turn: turn + 1 };
+      return selected;
+    };
+    const words = [];
+    window.WORD_LEVELS.slice(1).forEach((level, offset) => {
+      level.words.forEach((item, wordIndex) => {
+        if (!ready(item.text)) return;
+        const built = (writing.completed || {})[item.text] || {};
+        const matched = (reading.wordStats || {})[item.text] || {};
+        words.push({
+          ...item, levelIndex: offset + 1, wordIndex, key: item.text,
+          practiced: count(built.withHelp) + count(built.withoutExtraHelp) > 0 ||
+            !!(spelling.selfReported || {})[item.text] ||
+            count(matched.independent) + count(matched.withHelp) + count(matched.recognizedOnly) > 0
+        });
+      });
+    });
     const unlocked = Number.isInteger(reading.unlockedCount) ? reading.unlockedCount : 1;
-    const bookIndex = window.DECODABLE_BOOKS.findIndex((book, index) =>
-      index < unlocked && book.pages.every((page) => ready(page.text)));
-    return { word, bookIndex };
+    const books = window.DECODABLE_BOOKS.map((book, index) => ({
+      key: book.id, index, book,
+      practiced: count(((reading.bookProgress || {})[book.id] || {}).completions) > 0
+    })).filter(({ book, index }) => index < unlocked && book.pages.every((page) => ready(page.text)));
+    const word = choose("words", words);
+    const book = choose("books", books);
+    window.NorwegianProgress.saveActivityState("recommendations", history);
+    return { word, bookIndex: book ? book.index : -1 };
   }
 
   /**

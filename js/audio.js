@@ -107,6 +107,12 @@ const NorwegianAudio = (() => {
     return soundUnits(match[1])[Number(match[2])] || null;
   }
 
+  function canSoundOut(word) {
+    const units = soundUnits(word);
+    return typeof window.Audio === "function" && units.length > 0 &&
+      units.every((unit) => !!recordingFor(`unit:${unit.value}`));
+  }
+
   function later(callback, delay) {
     const timer = window.setTimeout(() => {
       timers.delete(timer);
@@ -304,15 +310,13 @@ const NorwegianAudio = (() => {
     const units = soundUnits(text);
     if (!units.length) return false;
     // Do not repeat a synthesized whole word for every missing unit recording.
-    const recordedUnits = typeof window.Audio === "function" &&
-      units.every((unit) => recordingFor(`unit:${unit.value}`));
-    const parts = recordedUnits ? units.map((unit) => ({ soundUnit: unit.value })) : [];
+    const parts = canSoundOut(text) ? units.map((unit) => ({ soundUnit: unit.value })) : [];
     parts.push({ text, rate: Math.min(playbackRate(options.rate || defaultRate()), LETTER_SOUND_MAX_RATE) });
     return speakSequence(parts, { ...options, gapMs: options.gapMs == null ? 320 : options.gapMs });
   }
 
   return {
-    speak, speakLetter, speakSoundUnit, speakSequence, soundOutWord, soundUnits,
+    speak, speakLetter, speakSoundUnit, speakSequence, soundOutWord, soundUnits, canSoundOut,
     letterSound, cancel, isSupported, voicesReady: () => voicesReady
   };
 })();

@@ -3,12 +3,11 @@
  *
  * Design (see docs/little-books-design.md for the full write-up and the
  * teacher-review findings it responds to):
- * - The child sees print FIRST and must attempt it before any audio is
- *   played automatically. "Hear it" / "Sound it out with me" are always
- *   available on request, never forced or withheld by level — support is
- *   child-controlled, not faded on a schedule.
- * - A wrong answer re-teaches (sounds out the missed word) instead of just
- *   saying "try again."
+ * - Print is visible while a spoken prompt asks for word or picture
+ *   recognition. Sentence audio and word support are always available on
+ *   request, never forced or withheld by level.
+ * - A wrong answer offers recorded sounds, or a slow spoken word when
+ *   recordings are unavailable, as well as a manual retry.
  * - Books are sequenced and unlock one at a time, like Letter Journey.
  * - Progress describes spoken-word/print matching, not proven decoding.
  * - Finishing a book shows a calm summary and a real stopping point instead
@@ -22,6 +21,10 @@ const ReadingPage = (() => {
   let pageIndex = 0;
   let unlockedCount = 1;
   let wordStats = {};
+  // Cumulative evidence is separate from replay coverage; legacy unlocks
+  // and word statistics are never treated as completed pages or passes.
+  let bookProgress = {};
+  let bookPasses = {};
   let questionNumber = 0;
   let question = null;
   let helpUsedThisAttempt = false;
@@ -34,13 +37,55 @@ const ReadingPage = (() => {
     pageIndex = Number.isInteger(saved.pageIndex) ? saved.pageIndex : DEFAULT_STATE.pageIndex;
     unlockedCount = Number.isInteger(saved.unlockedCount) ? saved.unlockedCount : DEFAULT_STATE.unlockedCount;
     wordStats = saved.wordStats && typeof saved.wordStats === "object" ? saved.wordStats : {};
+    bookProgress = {};
+    bookPasses = {};
+    window.DECODABLE_BOOKS.forEach((book) => {
+      const validPages = (pages) => [...new Set(Array.isArray(pages) ? pages.filter((index) =>
+        Number.isInteger(index) && index >= 0 && index < book.pages.length) : [])].sort((a, b) => a - b);
+      const evidence = saved.bookProgress && saved.bookProgress[book.id];
+      const completedPages = validPages(evidence && evidence.completedPages);
+      const completions = evidence && Number.isSafeInteger(evidence.completions) && evidence.completions >= 0 &&
+        completedPages.length === book.pages.length ? evidence.completions : 0;
+      bookProgress[book.id] = { completedPages, completions };
+      const pass = saved.bookPasses && saved.bookPasses[book.id];
+      const passPages = pass ? validPages(pass.completedPages).filter((index) => completedPages.includes(index))
+        : completedPages.slice();
+      bookPasses[book.id] = {
+        completedPages: passPages,
+        counted: passPages.length === book.pages.length && completions > 0 && (!pass || pass.counted === true)
+      };
+    });
     unlockedCount = Math.max(1, Math.min(unlockedCount, window.DECODABLE_BOOKS.length));
     bookIndex = Math.max(0, Math.min(bookIndex, unlockedCount - 1));
     pageIndex = Math.max(0, Math.min(pageIndex, window.DECODABLE_BOOKS[bookIndex].pages.length - 1));
   }
 
   function saveState() {
-    window.NorwegianProgress.saveActivityState("reading", { bookIndex, pageIndex, unlockedCount, wordStats });
+    window.NorwegianProgress.saveActivityState("reading", {
+      bookIndex, pageIndex, unlockedCount, wordStats, bookProgress, bookPasses
+    });
+  }
+
+  function completePage(book) {
+    const evidence = bookProgress[book.id];
+    const pass = bookPasses[book.id];
+    [evidence, pass].forEach((entry) => {
+      if (!entry.completedPages.includes(pageIndex)) {
+        entry.completedPages.push(pageIndex);
+        entry.completedPages.sort((a, b) => a - b);
+      }
+    });
+    if (pass.completedPages.length === book.pages.length && !pass.counted) {
+      evidence.completions = Math.min(Number.MAX_SAFE_INTEGER, evidence.completions + 1);
+      pass.counted = true;
+      unlockedCount = Math.max(unlockedCount, Math.min(bookIndex + 2, window.DECODABLE_BOOKS.length));
+    }
+    saveState();
+  }
+
+  function soundOutLabel(word) {
+    return window.NorwegianAudio.canSoundOut && window.NorwegianAudio.canSoundOut(word)
+      ? "Hør lydene" : "Hør ordet sakte";
   }
 
   function recordAttempt(word, correct, usedHelp, countsAsReading) {
@@ -68,10 +113,11 @@ const ReadingPage = (() => {
     const page = book.pages[pageIndex];
     const isLastPage = pageIndex === book.pages.length - 1;
 
-    if (showingSummary) {
+    if (showingSummary && bookPasses[book.id].completedPages.length === book.pages.length) {
       renderSummary(container, book);
       return;
     }
+    showingSummary = false;
 
     if (!question) {
       question = createQuestion(book, page, isLastPage);
@@ -104,7 +150,7 @@ const ReadingPage = (() => {
           <p class="reading-hint">Prøv å lese. Du kan alltid få hjelp. 🤗</p>
           <div class="detail-actions">
             ${window.SoundButton.html({ kind: "word", value: page.text, label: "Hør setningen", id: "read-sentence" })}
-            ${window.SoundButton.html({ kind: "sound-out", value: page.keyword, label: "Hør lydene", variant: "secondary", id: "sound-words" })}
+            ${window.SoundButton.html({ kind: "sound-out", value: page.keyword, label: soundOutLabel(page.keyword), variant: "secondary", id: "sound-words" })}
           </div>
           <div class="reading-questions">
             <section class="reading-question">
@@ -121,7 +167,7 @@ const ReadingPage = (() => {
           </div>
         </div>
         <div class="nav-buttons">
-          <button type="button" class="btn btn-outline" id="previous-page">⟵ Forrige</button>
+          <button type="button" class="btn btn-outline" id="previous-page" ${pageIndex === 0 ? "disabled" : ""}>⟵ Forrige</button>
           <span class="reading-page-count">Side ${pageIndex + 1} av ${book.pages.length}</span>
           <button type="button" class="btn btn-outline" id="next-page" ${isLastPage ? "disabled" : ""}>Neste ⟶</button>
         </div>
@@ -176,13 +222,27 @@ const ReadingPage = (() => {
         // not that the child decoded any print — don't count it toward
         // "read without help".
         recordAttempt(question.answerWord, true, helpUsedThisAttempt, question.type !== "picture");
+        completePage(book);
         window.setTimeout(() => {
           // Abort if the active profile changed (or progress was reset)
           // while this was pending, so we never write one child's session
           // into another's storage or force-navigate them away.
           if (!active() || question !== asked) return;
-          if (isLastPage) {
+          const unanswered = book.pages.findIndex((_, index) => !bookPasses[book.id].completedPages.includes(index));
+          if (unanswered === -1) {
             showingSummary = true;
+          } else if (isLastPage) {
+            feedback.insertAdjacentHTML("beforeend", `
+              <p>Du har flere sider å øve på før boka er ferdig.</p>
+              <button type="button" class="btn" data-unanswered>Gå til side ${unanswered + 1}</button>`);
+            feedback.querySelector("[data-unanswered]").addEventListener("click", () => {
+              if (!active() || question !== asked) return;
+              pageIndex = unanswered;
+              question = null;
+              saveState();
+              render(container);
+            });
+            return;
           } else {
             pageIndex += 1;
             question = null;
@@ -192,12 +252,11 @@ const ReadingPage = (() => {
         }, 1100);
       } else {
         feedback.className = "feedback reading-feedback feedback-incorrect";
-        feedback.innerHTML = `Hør lydene. Prøv igjen.
-          ${window.SoundButton.html({ kind: "sound-out", value: question.answerWord, label: "Hør igjen" })}
+        feedback.innerHTML = `${soundOutLabel(question.answerWord)}. Prøv igjen.
+          ${window.SoundButton.html({ kind: "sound-out", value: question.answerWord, label: soundOutLabel(question.answerWord) })}
           <button type="button" class="btn btn-outline" data-retry>Prøv igjen</button>`;
         helpUsedThisAttempt = true;
-        // Let them try again once they've actually heard it sounded out,
-        // instead of leaving every choice permanently disabled.
+        // Audio may be unavailable; the manual retry always remains available.
         const retry = () => {
           if (!active() || question !== asked || answered) return;
           answering = false;
@@ -208,8 +267,8 @@ const ReadingPage = (() => {
       }
     });
     container.querySelector("#previous-page").addEventListener("click", () => {
-      if (!active()) return;
-      pageIndex = (pageIndex - 1 + book.pages.length) % book.pages.length;
+      if (!active() || pageIndex === 0) return;
+      pageIndex -= 1;
       question = null;
       saveState();
       render(container);
@@ -218,7 +277,7 @@ const ReadingPage = (() => {
     if (nextButton && !nextButton.disabled) {
       nextButton.addEventListener("click", () => {
         if (!active()) return;
-        pageIndex = (pageIndex + 1) % book.pages.length;
+        pageIndex += 1;
         question = null;
         saveState();
         render(container);
@@ -261,6 +320,7 @@ const ReadingPage = (() => {
     viewActive = active;
     container.querySelector("#summary-replay").addEventListener("click", () => {
       if (!active()) return;
+      bookPasses[book.id] = { completedPages: [], counted: false };
       pageIndex = 0;
       question = null;
       showingSummary = false;
@@ -269,7 +329,6 @@ const ReadingPage = (() => {
     });
     container.querySelector("#summary-continue").addEventListener("click", () => {
       if (!active()) return;
-      unlockedCount = Math.max(unlockedCount, Math.min(bookIndex + 2, window.DECODABLE_BOOKS.length));
       const hasNextBook = bookIndex + 1 < window.DECODABLE_BOOKS.length;
       bookIndex = hasNextBook ? bookIndex + 1 : bookIndex;
       pageIndex = 0;
@@ -315,7 +374,7 @@ const ReadingPage = (() => {
       const choices = shuffle([book.transferWord.word, ...distractors]);
       return {
         prompt: "Finn det nye ordet.",
-        spokenPrompt: `Kan du lese dette nye ordet? Finn ordet ${book.transferWord.word}.`,
+        spokenPrompt: `Finn det nye ordet ${book.transferWord.word}.`,
         answer: book.transferWord.word,
         answerWord: book.transferWord.word,
         type: "word",

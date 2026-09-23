@@ -23,13 +23,16 @@ const WritingPage = (() => {
   let usedHelp = false;
 
   function render(container) {
-    session = window.PracticeSession.begin("writing", container, () => render(container));
     const saved = window.NorwegianProgress.getActivityState("writing");
     currentLevelIndex = Number.isInteger(saved.levelIndex) ? saved.levelIndex : 1;
     currentWordIndex = Number.isInteger(saved.wordIndex) ? saved.wordIndex : 0;
     const level = window.WORD_LEVELS[currentLevelIndex] || window.WORD_LEVELS[1];
     currentLevelIndex = window.WORD_LEVELS.indexOf(level);
     currentWordIndex = Math.max(0, Math.min(currentWordIndex, level.words.length - 1));
+    session = window.PracticeSession.begin("writing", container, () => render(container), {
+      scopeKey: currentLevelIndex,
+      target: Math.min(5, new Set(level.words.map((word) => word.text)).size)
+    });
     savePosition();
 
     const word = level.words[currentWordIndex];
@@ -60,6 +63,7 @@ const WritingPage = (() => {
       btn.textContent = lvl.name;
       btn.addEventListener("click", () => {
         if (!btn.isConnected || !session.active()) return;
+        window.NorwegianAudio.cancel();
         currentLevelIndex = idx;
         currentWordIndex = 0;
         savePosition();

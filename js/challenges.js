@@ -104,7 +104,11 @@ const ChallengesPage = (() => {
       }
       modes[id] = {
         rounds: count(entry.rounds), independent: count(entry.independent),
-        withHelp: count(entry.withHelp), sets: count(entry.sets), evidence
+        withHelp: count(entry.withHelp), sets: count(entry.sets), evidence,
+        easier: entry.easier === true,
+        recent: Array.isArray(entry.recent) ? entry.recent.filter((attempt) =>
+          attempt && typeof attempt.id === "string" && typeof attempt.independent === "boolean"
+        ).slice(-6).map(({ id, independent }) => ({ id, independent })) : []
       };
     });
     const lastMode = MODES.some((mode) => mode.id === saved.lastMode) ? saved.lastMode : null;
@@ -112,7 +116,10 @@ const ChallengesPage = (() => {
   }
 
   function ready(entry) {
-    return entry.independent >= 4 && Object.keys(entry.evidence).length >= 3;
+    const successful = entry.recent.filter((attempt) => attempt.independent);
+    return !entry.easier && successful.length >= 4 &&
+      new Set(successful.map((attempt) => attempt.id)).size >= 3 &&
+      entry.recent.slice(-2).every((attempt) => attempt.independent);
   }
 
   function familiarLetters() {
@@ -348,6 +355,19 @@ const ChallengesPage = (() => {
         window.SoundButton.play("word", message);
       }
 
+      function recordRecent(independentAttempt) {
+        const entry = state.modes[mode.id];
+        entry.recent = [...entry.recent, { id: round.id, independent: independentAttempt }].slice(-6);
+        persist();
+      }
+
+      function markAssisted() {
+        if (round.assisted) return;
+        round.assisted = true;
+        // Record difficulty even if the child leaves before finishing this round.
+        recordRecent(false);
+      }
+
       function finish() {
         if (!valid() || round.done) return;
         round.done = true;
@@ -361,6 +381,7 @@ const ChallengesPage = (() => {
           entry.independent += 1;
           entry.evidence[round.id] = count(entry.evidence[round.id]) + 1;
           independent += 1;
+          recordRecent(true);
         }
         if (completed === 5) entry.sets += 1;
         persist();
@@ -384,14 +405,14 @@ const ChallengesPage = (() => {
             if (round.selected.length !== round.order.length) return;
             if (round.selected.every((id, i) => id === round.order[i])) finish();
             else {
-              round.assisted = true;
+              markAssisted();
               say("La oss prøve igjen. Hva skjer først?");
               retry.hidden = false;
               retry.focus();
             }
           } else if (choice.id === round.answer) finish();
           else {
-            round.assisted = true;
+            markAssisted();
             say("Lytt gjerne igjen. Prøv et annet valg.");
           }
         }, "reading-choice");
@@ -407,7 +428,7 @@ const ChallengesPage = (() => {
       const hint = listen(round.hint, "💡 Hjelp");
       hint.addEventListener("click", () => {
         if (!valid() || round.done) return;
-        round.assisted = true;
+        markAssisted();
         status.textContent = round.visualHint || round.hint;
       });
       if (mode.id === "story") {
@@ -421,6 +442,22 @@ const ChallengesPage = (() => {
         actions.append(retry);
       }
       actions.append(hint, next);
+      const entry = state.modes[mode.id];
+      const difficultyText = entry.easier ? "🌱 Tilpass valgene igjen" : "🌱 Jeg vil ha færre valg";
+      actions.append(button(difficultyText, (event) => {
+        if (!valid()) return;
+        entry.easier = !entry.easier;
+        persist();
+        if (!round.done) {
+          window.NorwegianAudio.cancel();
+          startRound();
+          focusHeading();
+        } else {
+          event.currentTarget.textContent = entry.easier ? "🌱 Tilpass valgene igjen" : "🌱 Jeg vil ha færre valg";
+          status.textContent = "Valget gjelder neste runde.";
+        }
+      }, "btn btn-outline"));
+      actions.append(listen("Du kan velge færre bilder. Det du har øvd på blir beholdt.", "Hør om valgene"));
       card.append(choices, feedback, actions);
       root.append(card, button("← Velg en annen lek", () => {
         if (!valid()) return;

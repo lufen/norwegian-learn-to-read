@@ -74,7 +74,11 @@ const SoundButton = (() => {
       const unit = window.NorwegianAudio && window.NorwegianAudio.soundUnits(word)[index];
       return unit ? `Hear ${unit.text} in ${unit.word}; device fallback plays the whole word` : "Hear word sound";
     }
-    if (config.kind === "sound-out") return `Sound out ${config.value}`;
+    if (config.kind === "sound-out") {
+      return window.NorwegianAudio && window.NorwegianAudio.canSoundOut(config.value)
+        ? `Hør lydene og så hele ordet: ${config.value}`
+        : `Hør hele ordet sakte: ${config.value}`;
+    }
     return config.label ? `${config.label}: ${config.value}` : `Play ${config.value}`;
   }
 

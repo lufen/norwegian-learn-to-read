@@ -1,5 +1,5 @@
 /**
- * Five-task rounds. These dots describe participation, never mastery.
+ * Rounds of up to five tasks. These dots describe participation, never mastery.
  * A detached round or a changed profile cannot record another completion.
  */
 window.PracticeSession = (() => {
@@ -16,8 +16,11 @@ window.PracticeSession = (() => {
       started === epoch() && !!node && !node.hidden && node.isConnected && container.contains(node);
   }
 
-  function begin(activity, container, onContinue) {
-    if (current && current.activity === activity && current.active(true)) {
+  function begin(activity, container, onContinue, options = {}) {
+    const target = Number.isInteger(options.target) ? Math.max(1, Math.min(5, options.target)) : 5;
+    const scopeKey = options.scopeKey;
+    if (current && current.activity === activity && current.scopeKey === scopeKey &&
+        current.target === target && current.active(true)) {
       current.onContinue = onContinue;
       return current;
     }
@@ -30,20 +33,22 @@ window.PracticeSession = (() => {
     bar.setAttribute("aria-label", "Kort økt");
     const session = {
       activity,
+      scopeKey,
+      target,
       onContinue,
       active: (includeCompleted = false) => current === session && visit === navigation &&
         page === container.dataset.page && epoch() === started && bar.isConnected &&
-        container.contains(bar) && (includeCompleted || completed.size < 5),
+        container.contains(bar) && (includeCompleted || completed.size < target),
       has: (key) => completed.has(String(key)),
       attach() {
         container.appendChild(bar);
         draw();
       },
       complete(key, feedback) {
-        if (!session.active() || completed.size >= 5 || completed.has(String(key))) return false;
+        if (!session.active() || completed.size >= target || completed.has(String(key))) return false;
         completed.add(String(key));
         draw();
-        if (completed.size === 5) {
+        if (completed.size === target) {
           if (feedback) bar.prepend(feedback);
           bar.querySelector("h3").focus();
         }
@@ -51,19 +56,20 @@ window.PracticeSession = (() => {
       }
     };
     function draw() {
-      const done = completed.size === 5;
+      const done = completed.size === target;
+      const tasks = target === 1 ? "1 oppgave" : `${target} oppgaver`;
       if (done) {
         Array.from(container.children).forEach((child) => { if (child !== bar) child.hidden = true; });
       }
       bar.innerHTML = `
-        <p role="status" aria-label="${completed.size} av 5 oppgaver">
-          <span aria-hidden="true">${Array.from({ length: 5 }, (_, i) => i < completed.size ? "●" : "○").join(" ")}</span>
-          ${completed.size} / 5
+        <p role="status" aria-label="${completed.size} av ${tasks}">
+          <span aria-hidden="true">${Array.from({ length: target }, (_, i) => i < completed.size ? "●" : "○").join(" ")}</span>
+          ${completed.size} / ${target}
         </p>
         ${done ? `<h3 tabindex="-1">Flott øvd! Ta en pause?</h3>
-          <p>Du har øvd på fem oppgaver. Øving er ikke en prøve.</p>
+          <p>Du har øvd på ${tasks}. Øving er ikke en prøve.</p>
           ${window.SoundButton.html({ kind: "word", value: "Flott øvd! Vil du ta en pause eller øve mer?", label: "Hør" })}
-          <button type="button" class="btn" data-session-continue>Øv mer</button>` : "<p>Fem oppgaver, så en pause.</p>"}
+          <button type="button" class="btn" data-session-continue>Øv mer</button>` : `<p>${tasks}, så en pause.</p>`}
         <button type="button" class="btn btn-outline" data-session-stop>🏠 Ta en pause</button>`;
       bar.querySelector("[data-session-stop]").addEventListener("click", () => {
         if (!session.active(true)) return;

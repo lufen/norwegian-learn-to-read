@@ -1,6 +1,6 @@
 /**
- * Word Spelling module — breaks a word into phonemes/syllables, plays each
- * sound individually, then blends them into the full word.
+ * Word Spelling — visual spelling groups, with reviewed unit audio when
+ * available and clearly labelled whole-word replay otherwise.
  */
 
 const SpellingPage = (() => {
@@ -10,26 +10,34 @@ const SpellingPage = (() => {
   let session = null;
 
   function render(container) {
-    session = window.PracticeSession.begin("spelling", container, () => render(container));
     const saved = window.NorwegianProgress.getActivityState("spelling");
     currentLevelIndex = Number.isInteger(saved.levelIndex) ? saved.levelIndex : 1;
     currentWordIndex = Number.isInteger(saved.wordIndex) ? saved.wordIndex : 0;
     const level = window.WORD_LEVELS[currentLevelIndex] || window.WORD_LEVELS[1];
     currentLevelIndex = window.WORD_LEVELS.indexOf(level);
     currentWordIndex = Math.max(0, Math.min(currentWordIndex, level.words.length - 1));
+    session = window.PracticeSession.begin("spelling", container, () => render(container), {
+      scopeKey: currentLevelIndex,
+      target: Math.min(5, new Set(level.words.map((word) => word.text)).size)
+    });
     savePosition();
     container.innerHTML = "";
 
+    const word = level.words[currentWordIndex];
+    const canSoundOut = window.NorwegianAudio.canSoundOut(word.text);
+    const instruction = canSoundOut
+      ? "Hør lydene. Si dem sammen til et ord."
+      : "Se på bokstavgruppene. Hør hele ordet, og prøv å lese det.";
     const heading = document.createElement("div");
     heading.className = "page-header";
     heading.innerHTML = `
       <h2>Stave Ord — Spell Words</h2>
-      <p>Hør lydene. Si dem sammen til et ord.</p>
-      ${window.SoundButton.html({ kind: "word", value: "Hør lydene. Si dem sammen til et ord.", label: "Hør oppgaven" })}
+      <p>${instruction}</p>
+      ${window.SoundButton.html({ kind: "word", value: instruction, label: "Hør oppgaven" })}
     `;
     if (!introSpoken) {
       introSpoken = true;
-      window.NorwegianAudio.speak("Hør hver lyd, og sett dem sammen til et ord.");
+      window.NorwegianAudio.speak(instruction);
     }
     container.appendChild(heading);
 
@@ -42,6 +50,7 @@ const SpellingPage = (() => {
       btn.textContent = level.name;
       btn.addEventListener("click", () => {
         if (!btn.isConnected || !session.active()) return;
+        window.NorwegianAudio.cancel();
         currentLevelIndex = idx;
         currentWordIndex = 0;
         savePosition();
@@ -51,8 +60,6 @@ const SpellingPage = (() => {
     });
     container.appendChild(levelPicker);
 
-    const word = level.words[currentWordIndex];
-
     const card = document.createElement("div");
     card.className = "word-card";
     card.innerHTML = `
@@ -60,9 +67,12 @@ const SpellingPage = (() => {
       ${window.Curriculum ? window.Curriculum.newLetterBadge(word.text) : ""}
       <div class="word-syllables" id="word-syllables"></div>
       <p class="word-translation">${word.translation}</p>
-      <p class="hint">Lydbitene viser hvilke bokstaver som hører sammen. Uten lærerkontrollerte lydopptak hører du hele ordet. Enhetsstemmen kan si bokstavnavn.</p>
+      <p class="hint">${canSoundOut
+        ? "Trykk på en bokstavgruppe for å høre den innspilte lyden i ordet."
+        : "Bokstavgruppene er visuell hjelp, ikke lydknapper. Uten lærerkontrollerte opptak av hver lyd hører du hele ordet. Enhetsstemmen er en tilnærming."}</p>
       <div class="detail-actions">
         ${window.SoundButton.html({ kind: "word", value: word.text, label: "Hør ordet" })}
+        ${window.SoundButton.html({ kind: "sound-out", value: word.text, label: canSoundOut ? "Hør lydene og ordet" : "Hør hele ordet sakte", variant: "secondary" })}
         <button type="button" class="btn btn-secondary" id="mark-word-mastered" ${session.has(word.text) ? "disabled" : ""}>
           ${session.has(word.text) ? "✅ Registrert i denne økten" : "Jeg prøvde å lese ordet"}
         </button>
@@ -77,18 +87,25 @@ const SpellingPage = (() => {
     const active = window.PracticeSession.scope(container);
 
     const syllablesContainer = card.querySelector("#word-syllables");
-    const grouped = typeof window.NorwegianAudio.soundUnits === "function";
-    const displayParts = grouped ? window.NorwegianAudio.soundUnits(word.text) : Array.from(word.text);
+    const displayParts = window.NorwegianAudio.soundUnits(word.text);
     displayParts.forEach((part) => {
-      const text = grouped ? part.text : part;
+      const text = part.text;
       if (!String(text).trim()) return;
+      if (!canSoundOut) {
+        const group = document.createElement("span");
+        group.className = "build-slot";
+        group.textContent = text;
+        syllablesContainer.appendChild(group);
+        return;
+      }
       syllablesContainer.appendChild(window.SoundButton.create({
-        kind: grouped ? "sound-unit" : (String(text).length === 1 ? "letter" : "word"),
-        value: grouped ? part.value : text,
+        kind: "sound-unit",
+        value: part.value,
         icon: null,
         label: text,
         variant: "bare",
-        className: "syllable-chip"
+        className: "syllable-chip",
+        ariaLabel: `Hør ${text} i ${word.text}`
       }));
     });
 
