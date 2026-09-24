@@ -185,12 +185,13 @@ a {
   margin-top: 1.5rem;
 }
 
-.home-activities summary {
-  cursor: pointer;
+.home-activities h3 {
+  margin: 0;
   padding: 1rem;
   border: 2px solid var(--no-blue);
   border-radius: var(--radius);
   font-weight: 700;
+  font-size: 1rem;
 }
 
 .home-recommendations .btn {

@@ -68,9 +68,9 @@ const App = (() => {
       </button>`;
     container.appendChild(primary);
 
-    const choices = document.createElement("details");
+    const choices = document.createElement("section");
     choices.className = "home-activities";
-    choices.innerHTML = "<summary>🧸 Velg en annen lek</summary>";
+    choices.innerHTML = "<h3>🧸 Velg en annen lek</h3>";
     container.appendChild(choices);
     const menu = document.createElement("div");
     menu.className = "home-menu";
