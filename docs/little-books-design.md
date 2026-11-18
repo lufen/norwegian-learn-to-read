@@ -193,6 +193,15 @@ point and an optional invite to read it again with a grown-up. No adult
 needs to operate the app, but the app doesn't pretend adult involvement is
 undesirable.
 
+### Reading together (short stories)
+Story books (`story: true` in `js/data.js`) offer a **👪 Les sammen** mode,
+reachable from the book page and its summary. It shows one page at a time
+with turn-taking (🧒 child reads, 🧑 grown-up reads), sentence audio only on
+request, and a per-page `talk` question for the grown-up, ending with a
+retell prompt. It is deliberately unscored: nothing is saved as reading
+evidence and it never unlocks books, so adult-supported reading cannot be
+mistaken for independent decoding.
+
 ## 8. Implementation plan (scoped for this pass)
 Given the size of a full curriculum overhaul, this pass implements the
 mechanics that fix the most serious flaws now, and defers the rest:

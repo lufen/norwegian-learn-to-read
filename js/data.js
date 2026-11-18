@@ -90,7 +90,31 @@ const NORWEGIAN_WORD_SOUND_UNITS = {
   sur: ["s", "u", "r"],
   rar: ["r", "a", "r"],
   lås: ["l", "å", "s"],
-  mil: ["m", "i", "l"]
+  mil: ["m", "i", "l"],
+  her: ["h", "e", "r"],
+  ost: ["o", "s", "t"],
+  tar: ["t", "a", "r"],
+  nam: ["n", "a", "m"],
+  mat: ["m", "a", "t"],
+  rød: ["r", "ød"],
+  glad: ["g", "l", "ad"],
+  dal: ["d", "a", "l"],
+  har: ["h", "a", "r"],
+  varm: ["v", "a", "r", "m"],
+  smelter: ["s", "m", "e", "l", "t", "e", "r"],
+  ler: ["l", "e", "r"],
+  hav: ["h", "a", "v"],
+  i: ["i"],
+  hopper: ["h", "o", "pp", "e", "r"],
+  plask: ["p", "l", "a", "s", "k"],
+  våt: ["v", "å", "t"],
+  ris: ["r", "i", "s"],
+  går: ["g", "å", "r"],
+  ned: ["n", "e", "d"],
+  måne: ["m", "å", "n", "e"],
+  god: ["g", "od"],
+  natt: ["n", "a", "tt"],
+  mål: ["m", "å", "l"]
 };
 
 /*
@@ -201,6 +225,97 @@ const DECODABLE_BOOKS = [
       { text: "Mus ser sol.", keyword: "sol", picture: "🐭👀☀️" },
       { text: "Mus løper.", keyword: "løper", picture: "🐭💨" },
       { text: "Mus er liten.", keyword: "liten", picture: "🐭🤏" }
+    ]
+  },
+  /*
+   * Short stories: five pages with a tiny beginning, event, and ending, so
+   * the child reads a whole little plot on her own. Words stay short and
+   * mostly one sound per letter; earlier words (mus, katt, sol, ser, er,
+   * sover) return for spaced repetition. Every word in the text is in the
+   * book's closed bank, and each transfer word is unseen elsewhere and
+   * spelled from letters already met in that book or earlier books.
+   * `talk` is a question for the grown-up to ask during "Les sammen"
+   * (reading together); it is spoken/read by the adult, so it is not
+   * limited to the decodable word bank.
+   */
+  {
+    id: "mus-og-ost",
+    title: "Mus og ost",
+    icon: "🧀",
+    level: "Short story",
+    story: true,
+    wordBank: { her: "👋", er: "🟰", mus: "🐭", ser: "👀", ost: "🧀", gul: "🟡", tar: "✋", nam: "😋" },
+    transferWord: { word: "mat", emoji: "🍽️" },
+    pages: [
+      { text: "Her er mus.", keyword: "mus", picture: "👋🐭", talk: "Hvor tror du musa bor?" },
+      { text: "Mus ser ost.", keyword: "ost", picture: "🐭👀🧀", talk: "Hva tror du musa har lyst til å gjøre nå?" },
+      { text: "Ost er gul.", keyword: "gul", picture: "🧀🟡", talk: "Hva annet kan være gult?" },
+      { text: "Mus tar ost.", keyword: "tar", picture: "🐭✋🧀", talk: "Er det lov å ta osten? Hva tror du?" },
+      { text: "Nam nam!", keyword: "nam", picture: "🐭😋", talk: "Hva er den beste maten du vet om?" }
+    ]
+  },
+  {
+    id: "hund-og-ball",
+    title: "Hund og ball",
+    icon: "🐶",
+    level: "Short story",
+    story: true,
+    wordBank: { hund: "🐶", ser: "👀", ball: "⚽", er: "🟰", rød: "🔴", løper: "💨", tar: "✋", glad: "😄" },
+    transferWord: { word: "dal", emoji: "🏞️" },
+    pages: [
+      { text: "Hund ser ball.", keyword: "ball", picture: "🐶👀⚽", talk: "Hva tror du hunden vil gjøre med ballen?" },
+      { text: "Ball er rød.", keyword: "rød", picture: "⚽🔴", talk: "Kan du finne noe rødt der du er nå?" },
+      { text: "Hund løper.", keyword: "løper", picture: "🐶💨", talk: "Hvor fort kan du løpe? Vis meg!" },
+      { text: "Hund tar ball.", keyword: "tar", picture: "🐶✋⚽", talk: "Hvordan tar en hund ballen uten hender?" },
+      { text: "Hund er glad.", keyword: "glad", picture: "🐶😄", talk: "Hva gjør deg glad?" }
+    ]
+  },
+  {
+    id: "is-smelter",
+    title: "Is",
+    icon: "🍦",
+    level: "Short story",
+    story: true,
+    wordBank: { mor: "👩", har: "🤲", is: "🍦", sol: "☀️", er: "🟰", varm: "🥵", smelter: "💧", ler: "😂", nam: "😋" },
+    transferWord: { word: "hav", emoji: "🌊" },
+    pages: [
+      { text: "Mor har is.", keyword: "is", picture: "👩🍦", talk: "Hvilken is liker du best?" },
+      { text: "Sol er varm.", keyword: "varm", picture: "☀️🥵", talk: "Hva skjer med is når sola er varm?" },
+      { text: "Is smelter.", keyword: "smelter", picture: "🍦💧", talk: "Hva burde mor gjøre nå?" },
+      { text: "Mor ler.", keyword: "ler", picture: "👩😂", talk: "Hvorfor tror du mor ler?" },
+      { text: "Nam nam!", keyword: "nam", picture: "😋🍦", talk: "Hva gjør du når isen smelter?" }
+    ]
+  },
+  {
+    id: "katt-og-fisk",
+    title: "Katt og fisk",
+    icon: "🐟",
+    level: "Short story",
+    story: true,
+    wordBank: { katt: "🐱", ser: "👀", fisk: "🐟", er: "🟰", i: "📥", vann: "💧", hopper: "🦘", plask: "💦", våt: "😿" },
+    transferWord: { word: "ris", emoji: "🍚" },
+    pages: [
+      { text: "Katt ser fisk.", keyword: "fisk", picture: "🐱👀🐟", talk: "Hva tror du katten tenker?" },
+      { text: "Fisk er i vann.", keyword: "vann", picture: "🐟💧", talk: "Liker katter å bli våte?" },
+      { text: "Katt hopper.", keyword: "hopper", picture: "🐱🦘", talk: "Hva tror du skjer nå?" },
+      { text: "Plask!", keyword: "plask", picture: "💦", talk: "Hvordan høres et plask ut? Si det sammen!" },
+      { text: "Katt er våt.", keyword: "våt", picture: "😿💧", talk: "Hvordan tror du katten føler seg nå?" }
+    ]
+  },
+  {
+    id: "god-natt",
+    title: "God natt",
+    icon: "🌙",
+    level: "Short story",
+    story: true,
+    wordBank: { sol: "☀️", går: "🚶", ned: "⬇️", se: "👀", måne: "🌙", katt: "🐱", sover: "💤", mus: "🐭", god: "👍", natt: "🌃" },
+    transferWord: { word: "mål", emoji: "🥅" },
+    pages: [
+      { text: "Sol går ned.", keyword: "ned", picture: "🌇", talk: "Hva gjør du når det blir kveld?" },
+      { text: "Se, måne!", keyword: "måne", picture: "👀🌙", talk: "Hvordan ser månen ut i kveld?" },
+      { text: "Katt sover.", keyword: "sover", picture: "🐱💤", talk: "Hvor liker du å sove?" },
+      { text: "Mus sover.", keyword: "mus", picture: "🐭💤", talk: "Hva tror du musa drømmer om?" },
+      { text: "God natt!", keyword: "natt", picture: "🌃⭐", talk: "Hvem sier du god natt til?" }
     ]
   }
 ];
