@@ -536,6 +536,29 @@ select:focus-visible {
   margin: 0.25rem 0 0.5rem;
 }
 
+.reading-together-invite {
+  text-align: center;
+  margin-bottom: 1rem;
+}
+
+.reading-together {
+  text-align: center;
+}
+
+.reading-together-turn {
+  font-size: 1.3rem;
+  font-weight: 700;
+  margin: 0 0 0.5rem;
+}
+
+.reading-together-talk {
+  background: #fff8e1;
+  border-radius: 12px;
+  padding: 0.75rem 1rem;
+  margin: 1rem auto;
+  max-width: 420px;
+}
+
 .reading-summary-list {
   list-style: none;
   padding: 0;

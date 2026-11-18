@@ -29,6 +29,12 @@ const ReadingPage = (() => {
   let question = null;
   let helpUsedThisAttempt = false;
   let showingSummary = false;
+  // "Les sammen" (read together) is a calm, unscored mode for story books:
+  // the child and a grown-up take turns, and the page offers a question to
+  // talk about. Nothing here is recorded as reading evidence or unlocks books.
+  let readingTogether = false;
+  let togetherPage = 0;
+  let togetherFromSummary = false;
   let viewActive = () => false;
 
   function loadState() {
@@ -114,11 +120,18 @@ const ReadingPage = (() => {
     if (entering) {
       question = null;
       showingSummary = false;
+      readingTogether = false;
       questionNumber = 0;
     }
     loadState();
     const book = window.DECODABLE_BOOKS[bookIndex];
     if (entering && restartCompletedPass(book)) saveState();
+
+    if (readingTogether && book.story) {
+      renderTogether(container, book);
+      return;
+    }
+    readingTogether = false;
     const page = book.pages[pageIndex];
     const isLastPage = pageIndex === book.pages.length - 1;
 
@@ -152,6 +165,11 @@ const ReadingPage = (() => {
             `;
           }).join("")}
         </div>
+        ${book.story ? `
+          <div class="reading-together-invite">
+            <p>👪 Dette er en liten historie. Les den gjerne sammen med en voksen!</p>
+            <button type="button" class="btn btn-secondary" data-read-together>👪 Les sammen</button>
+          </div>` : ""}
         <div class="reading-page" aria-live="polite">
           <div class="reading-picture" aria-hidden="true">${page.picture}</div>
           <p class="reading-sentence" id="reading-sentence">${page.text}</p>
@@ -204,6 +222,13 @@ const ReadingPage = (() => {
         render(container);
       });
     });
+    const togetherButton = container.querySelector("[data-read-together]");
+    if (togetherButton) {
+      togetherButton.addEventListener("click", () => {
+        if (!active() || answered) return;
+        startTogether(container);
+      });
+    }
     // The buttons themselves play their sound (SoundButton handles that
     // globally); these listeners only record that help was asked for.
     ["#read-sentence", "#sound-words"].forEach((selector) => {
@@ -320,6 +345,7 @@ const ReadingPage = (() => {
         <p class="reading-hint">Dette viser ord- og bildegjenkjenning, ikke sikker lesing. Les gjerne med en voksen.</p>
         ${window.SoundButton.html({ kind: "word", value: "Flott øvd! Vil du lese igjen eller ta en pause?", label: "Hør" })}
         <div class="detail-actions">
+          ${book.story ? `<button type="button" class="btn btn-secondary" data-read-together>👪 Les sammen</button>` : ""}
           <button type="button" class="btn btn-secondary" id="summary-replay">🔁 Les igjen</button>
           <button type="button" class="btn" id="summary-continue">Fortsett ➡️</button>
           <button type="button" class="btn btn-outline" id="summary-home">🏠 Ta en pause</button>
@@ -328,6 +354,14 @@ const ReadingPage = (() => {
     `;
     const active = window.PracticeSession.scope(container);
     viewActive = active;
+    const togetherButton = container.querySelector("[data-read-together]");
+    if (togetherButton) {
+      togetherButton.addEventListener("click", () => {
+        if (!active()) return;
+        showingSummary = false;
+        startTogether(container, true);
+      });
+    }
     container.querySelector("#summary-replay").addEventListener("click", () => {
       if (!active()) return;
       bookPasses[book.id] = { completedPages: [], counted: false };
@@ -351,6 +385,86 @@ const ReadingPage = (() => {
     container.querySelector("#summary-home").addEventListener("click", () => {
       if (!active()) return;
       showingSummary = false;
+      if (window.App && window.App.navigate) {
+        window.App.navigate("home");
+      } else {
+        window.location.hash = "";
+      }
+    });
+  }
+
+  function startTogether(container, fromSummary = false) {
+    readingTogether = true;
+    togetherFromSummary = fromSummary;
+    togetherPage = 0;
+    question = null;
+    render(container);
+  }
+
+  /**
+   * Shared reading for story books: one page at a time, with turn-taking
+   * (child reads, then grown-up reads) and a talk prompt for the grown-up.
+   * Nothing is spoken automatically and nothing is scored or saved.
+   */
+  function renderTogether(container, book) {
+    const total = book.pages.length;
+    const finished = togetherPage >= total;
+    const page = book.pages[Math.min(togetherPage, total - 1)];
+    const childTurn = togetherPage % 2 === 0;
+    container.innerHTML = `
+      <div class="page-header">
+        <h2>👪 Les sammen — Read together</h2>
+        <p>«${book.title}» — bytt på å lese. Ingen svar blir rettet.</p>
+      </div>
+      <div class="reading-card reading-together">
+        ${finished ? `
+          <div class="reading-picture" aria-hidden="true">📖✨</div>
+          <p class="reading-sentence">Slutt!</p>
+          <p class="reading-together-talk"><strong>👪 Snakk sammen:</strong>
+            Kan du fortelle hele historien med dine egne ord? Hva likte du best?</p>
+          <div class="detail-actions">
+            <button type="button" class="btn btn-secondary" id="together-again">🔁 Les sammen igjen</button>
+            <button type="button" class="btn" id="together-done">📖 Tilbake til boka</button>
+            <button type="button" class="btn btn-outline" id="together-home">🏠 Ta en pause</button>
+          </div>
+        ` : `
+          <p class="reading-together-turn">${childTurn ? "🧒 Din tur å lese!" : "🧑 Den voksne leser nå."}</p>
+          <div class="reading-picture" aria-hidden="true">${page.picture}</div>
+          <p class="reading-sentence">${page.text}</p>
+          <div class="detail-actions">
+            ${window.SoundButton.html({ kind: "word", value: page.text, label: "Hør setningen", variant: "secondary" })}
+          </div>
+          ${page.talk ? `<p class="reading-together-talk"><strong>👪 Snakk sammen:</strong> ${page.talk}</p>` : ""}
+          <div class="nav-buttons">
+            <button type="button" class="btn btn-outline" id="together-previous" ${togetherPage === 0 ? "disabled" : ""}>⟵ Forrige</button>
+            <span class="reading-page-count">Side ${togetherPage + 1} av ${total}</span>
+            <button type="button" class="btn" id="together-next">Neste ⟶</button>
+          </div>
+          <div class="detail-actions">
+            <button type="button" class="btn btn-outline" id="together-done">📖 Tilbake til boka</button>
+          </div>
+        `}
+      </div>
+    `;
+    const active = window.PracticeSession.scope(container);
+    viewActive = active;
+    const on = (selector, handler) => {
+      const element = container.querySelector(selector);
+      if (element && !element.disabled) {
+        element.addEventListener("click", () => { if (active()) handler(); });
+      }
+    };
+    on("#together-previous", () => { togetherPage -= 1; render(container); });
+    on("#together-next", () => { togetherPage += 1; render(container); });
+    on("#together-again", () => { togetherPage = 0; render(container); });
+    on("#together-done", () => {
+      readingTogether = false;
+      question = null;
+      showingSummary = togetherFromSummary;
+      render(container);
+    });
+    on("#together-home", () => {
+      readingTogether = false;
       if (window.App && window.App.navigate) {
         window.App.navigate("home");
       } else {
